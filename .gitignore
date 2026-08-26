@@ -1,21 +1,28 @@
-# Системные файлы операционных систем
+# секреты
+.env.local
+.env
+*.pem
+.b2c_cookies
+
+# зависимости
+/vendor/
+/node_modules/
+
+# сборка и отчёты
+/build/
+/dist/
+*.zip
+/coverage/
+.phpunit.result.cache
+.phpcs-cache
+
+# окружение
+/.wp-env-home/
+/wordpress/
+/wp-content/
+
+# редакторы и ОС
+/.idea/
+/.vscode/
 .DS_Store
-.DS_Store?
-._*
 Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Временные файлы и логи
-*.log
-*.tmp
-*.bak
-
-# Настройки сред разработки (IDE)
-.idea/
-.vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.swp
