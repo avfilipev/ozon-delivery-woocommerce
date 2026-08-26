@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Spoki\OzonDelivery\Install;
 
+use Spoki\OzonDelivery\Admin\Settings;
+
 final class Uninstaller {
 
 	/**
@@ -12,11 +14,11 @@ final class Uninstaller {
 	 * @var string[]
 	 */
 	private const OPTIONS = array(
-		'ozon_delivery_client_id',
-		'ozon_delivery_client_secret',
-		'ozon_delivery_scope',
-		'ozon_delivery_shipment_method_id',
-		'ozon_delivery_dry_run',
+		Settings::FIELD_CLIENT_ID,
+		Settings::FIELD_CLIENT_SECRET,
+		Settings::FIELD_SCOPE,
+		Settings::FIELD_SHIPMENT_METHOD_ID,
+		Settings::FIELD_DRY_RUN,
 		Migrations::OPTION_NAME,
 	);
 
