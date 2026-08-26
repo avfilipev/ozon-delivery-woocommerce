@@ -4,8 +4,6 @@
 
     <file>src</file>
     <file>tests</file>
-    <file>ozon-delivery-for-woocommerce.php</file>
-    <file>uninstall.php</file>
 
     <arg value="sp"/>
     <arg name="colors"/>
@@ -14,10 +12,11 @@
     <config name="testVersion" value="8.1-"/>
     <config name="minimum_supported_wp_version" value="6.4"/>
 
-    <rule ref="WordPress">
+    <rule ref="WordPress-Core"/>
+    <rule ref="WordPress-Extra">
         <!-- Классы автозагружаются по PSR-4, файлы не переименовывать под class-*.php. -->
         <exclude name="WordPress.Files.FileName"/>
-        <!-- PSR-4 требует строгое соответствие "1 файл — 1 класс/интерфейс", это конфликтует с part of WP core layout sniff. -->
+        <!-- PSR-4 требует строгое соответствие "1 файл — 1 класс/интерфейс". -->
         <exclude name="Generic.Files.OneObjectStructurePerFile"/>
     </rule>
 

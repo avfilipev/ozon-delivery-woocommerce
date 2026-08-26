@@ -2,8 +2,6 @@ parameters:
     level: 6
     paths:
         - src
-        - ozon-delivery-for-woocommerce.php
-        - uninstall.php
     excludePaths:
         - tests/*
     bootstrapFiles:
