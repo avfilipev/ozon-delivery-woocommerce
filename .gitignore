@@ -1,0 +1,21 @@
+# Системные файлы операционных систем
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Временные файлы и логи
+*.log
+*.tmp
+*.bak
+
+# Настройки сред разработки (IDE)
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
