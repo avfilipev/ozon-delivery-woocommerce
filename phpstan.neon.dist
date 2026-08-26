@@ -1,0 +1,13 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - ozon-delivery-for-woocommerce.php
+        - uninstall.php
+    excludePaths:
+        - tests/*
+    bootstrapFiles:
+        - vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
