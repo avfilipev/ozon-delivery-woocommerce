@@ -5,6 +5,7 @@
     <file>src</file>
     <file>tests</file>
     <file>uninstall.php</file>
+    <file>ozon-delivery-for-woocommerce.php</file>
 
     <arg value="sp"/>
     <arg name="colors"/>
