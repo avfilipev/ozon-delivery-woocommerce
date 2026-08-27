@@ -87,10 +87,55 @@ composer analyse  — уровень 6, 0 ошибок
 2. **Полной спеки в репозитории нет** — см. раздел в `CLAUDE.md`. До неё единственный источник истины `docs/API.md`.
 3. **Ничего не проверено на живом API**: нет ключей. Всё выше — юнит-тесты и статический анализ.
 
-### Что дальше
+---
 
-1. **Добавить ключи** в настройки WooCommerce (`.env.local` потерян и в git его не было) и нажать «Проверить подключение» — это первый живой прогон OAuth и testcookie.
-2. Записать живой ответ токена в `tests/Fixtures/`, закрыть открытый вопрос 1.
+## Фаза 2 — каталог ПВЗ: сделано (27.08.2026)
+
+| Файл | Назначение | Тест |
+|---|---|---|
+| `src/Support/Money.php` | Деньги строками, сравнение и сложение в минорных единицах — правило 9 | `tests/Unit/Support/MoneyTest.php` |
+| `src/Shipping/Dimensions.php` | Единственное место конвертации единиц WooCommerce в граммы и миллиметры — правило 8 | `tests/Unit/Shipping/DimensionsTest.php` |
+| `src/Points/Restrictions.php` | Ограничения точки: вес, габариты, объявленная стоимость | `tests/Unit/Points/RestrictionsTest.php` |
+| `src/Points/DeliveryPoint.php` | Модель ПВЗ, разбор ответа, сериализация в строку таблицы | `tests/Unit/Points/DeliveryPointTest.php` |
+| `src/Api/ErrorCodes.php` | Словарь кодов ошибок внутри 200 — правило 3 | `tests/Unit/Api/ErrorCodesTest.php` |
+| `src/Api/Endpoints/DeliveryPoints.php` | `list` с курсором, `info` пачками, `check-availability` | `tests/Unit/Api/Endpoints/DeliveryPointsTest.php` |
+| `src/Install/Migrations.php` | Таблица `wp_ozon_delivery_points`, схема 1.1.0 | `tests/Unit/Install/MigrationsTest.php` |
+| `src/Points/Repository.php`, `PointQuery.php` | Локальный каталог, фильтрация по городу, bbox, методу и ограничениям в SQL | `tests/Unit/Points/RepositoryTest.php` |
+| `src/Points/CatalogSync.php`, `SyncState.php`, `CatalogPage.php` | Обход каталога с курсором, устойчивый к обрыву | `tests/Unit/Points/CatalogSyncTest.php` |
+| `src/Points/Availability.php`, `PointAvailability.php` | Подбор точек: локальный фильтр + подтверждение у Ozon | `tests/Unit/Points/AvailabilityTest.php` |
+| `src/Jobs/SyncPointsJob.php` | Фоновый обход через Action Scheduler | `tests/Unit/Jobs/SyncPointsJobTest.php` |
+| `src/Admin/CatalogStatus.php` | Состояние каталога для админки | `tests/Unit/Admin/CatalogStatusTest.php` |
+
+```
+composer lint     — 65/65, без замечаний
+composer test     — 303 теста, 513 assertions, OK
+composer analyse  — уровень 6, 0 ошибок
+```
+
+### Решения, которые стоит знать
+
+- **Фильтрация по ограничениям идёт в SQL, а не в PHP.** Смысл в том, чтобы не тащить в `check-availability` точки, которые заведомо не примут отправление. `NULL` в ограничении означает «предела нет».
+- **Суммы в разных валютах не сравниваются.** Ни в `Restrictions`, ни в SQL: молча спрятать точку неправильно, пусть решает Ozon.
+- **Точка без `is_active` считается нерабочей.** Лучше скрыть, чем отправить заказ в закрытый ПВЗ. Точка, о которой `check-availability` промолчал, тоже убирается: молчание — не подтверждение.
+- **`delete_stale` только после полного обхода.** Снести устаревшие точки на середине означало бы выкосить половину каталога из-за одного обрыва связи.
+- **Ошибка шага не роняет Action Scheduler.** Выпущенное исключение пометило бы задачу упавшей и оборвало расписание; вместо этого шаг ставится заново с паузой, курсор сохранён.
+- **Города отдельным полем Ozon не отдаёт** — он вытаскивается из адреса эвристикой и проходит через фильтр `ozon_delivery_point_city`. Разбор адресов лотерея, чужая правка должна писаться сниппетом.
+
+### Живая проверка в wp-env (27.08.2026)
+
+- таблица создаётся при активации: 23 колонки, `db_version = 1.1.0`;
+- запись точки → чтение обратно сохраняет имя, город (выведенный из адреса), координаты и методы доставки;
+- фильтрация в SQL работает на реальной MySQL: слишком тяжёлое отправление → 0 точек, чужой метод доставки → 0, bbox по Москве → 1, дальний bbox → 0;
+- блок каталога и кнопка «Обновить каталог» рендерятся на вкладке настроек;
+- ежедневное обновление реально стоит в Action Scheduler после активации;
+- `debug.log` пуст.
+
+---
+
+## Что дальше
+
+1. **Добавить ключи** в настройки WooCommerce (`.env.local` потерян и в git его не было) и нажать «Проверить подключение» — это первый живой прогон OAuth и testcookie. Затем «Обновить каталог» — первый настоящий обход ПВЗ.
+2. Записать живой ответ токена в `tests/Fixtures/`, закрыть открытый вопрос по схеме ответа OAuth.
 3. Сохранить спеку из браузера в `docs/ozon-delivery.swagger.json`.
-4. Фаза 2 — каталог ПВЗ: синхронизация в свою таблицу, экран в админке, геовыборка.
+4. Фаза 3 — метод доставки до ПВЗ: расчёт через `order/checkout`, выбор точки на чекауте, `check-client`, сохранение точки в мету заказа.
 
