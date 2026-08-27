@@ -5,25 +5,20 @@ declare(strict_types=1);
 namespace Spoki\OzonDelivery\Tests\Unit\Api;
 
 use Brain\Monkey\Functions;
-use Mockery;
 use Spoki\OzonDelivery\Api\CookieJar;
 use Spoki\OzonDelivery\Api\Exception\RateLimitException;
 use Spoki\OzonDelivery\Api\Exception\TransportException;
 use Spoki\OzonDelivery\Api\Transport;
 use Spoki\OzonDelivery\Support\Logger;
 use Spoki\OzonDelivery\Tests\TestCase;
+use Spoki\OzonDelivery\Tests\WpHttpStubs;
 use WP_Error;
 
 final class TransportTest extends TestCase {
 
-	private const URL = 'https://api-delivery.ozon.ru/v1/posting/info';
+	use WpHttpStubs;
 
-	/**
-	 * Аргументы каждого вызова wp_remote_post по порядку.
-	 *
-	 * @var array<int, array{url: string, args: array<string, mixed>}>
-	 */
-	private array $calls = array();
+	private const URL = 'https://api-delivery.ozon.ru/v1/posting/info';
 
 	/**
 	 * Задержки, которые Transport попросил выждать, вместо реального сна.
@@ -32,85 +27,11 @@ final class TransportTest extends TestCase {
 	 */
 	private array $slept = array();
 
-	/**
-	 * Контексты, попавшие в лог WooCommerce.
-	 *
-	 * @var array<int, array<string, mixed>>
-	 */
-	private array $logged = array();
-
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->calls  = array();
-		$this->slept  = array();
-		$this->logged = array();
-
-		$wc_logger = Mockery::mock();
-		$wc_logger->shouldReceive( 'log' )->andReturnUsing(
-			function ( string $level, string $message, array $context ): void {
-				$this->logged[] = $context;
-			}
-		);
-		Functions\when( 'wc_get_logger' )->justReturn( $wc_logger );
-
-		Functions\when( 'set_transient' )->justReturn( true );
-		Functions\when( 'delete_transient' )->justReturn( true );
-		Functions\when( 'get_transient' )->justReturn( false );
-
-		Functions\when( 'wp_json_encode' )->alias(
-			static fn( $data ) => json_encode( $data ) // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
-		);
-
-		Functions\when( 'is_wp_error' )->alias(
-			static fn( $thing ): bool => $thing instanceof WP_Error
-		);
-		Functions\when( 'wp_remote_retrieve_response_code' )->alias(
-			static fn( $response ) => $response['response']['code'] ?? 0
-		);
-		Functions\when( 'wp_remote_retrieve_body' )->alias(
-			static fn( $response ): string => $response['body'] ?? ''
-		);
-		Functions\when( 'wp_remote_retrieve_header' )->alias(
-			static fn( $response, string $name ) => $response['headers'][ strtolower( $name ) ] ?? ''
-		);
-	}
-
-	/**
-	 * Ставит в очередь ответы wp_remote_post и записывает аргументы вызовов.
-	 *
-	 * @param array<int, mixed> $responses
-	 */
-	private function queue( array $responses ): void {
-		Functions\when( 'wp_remote_post' )->alias(
-			function ( string $url, array $args ) use ( &$responses ) {
-				$this->calls[] = array(
-					'url'  => $url,
-					'args' => $args,
-				);
-
-				return array_shift( $responses ) ?? self::ok();
-			}
-		);
-	}
-
-	/**
-	 * @param array<string, string> $headers
-	 * @return array<string, mixed>
-	 */
-	private static function response( int $code, array $headers = array(), string $body = '' ): array {
-		return array(
-			'response' => array( 'code' => $code ),
-			'headers'  => $headers + array( 'x-o3-trace-id' => 'trace-default' ),
-			'body'     => $body,
-		);
-	}
-
-	/**
-	 * @return array<string, mixed>
-	 */
-	private static function ok( string $body = '{"ok":true}' ): array {
-		return self::response( 200, array(), $body );
+		$this->stub_wp_http();
+		$this->slept = array();
 	}
 
 	/**
