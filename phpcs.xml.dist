@@ -36,5 +36,14 @@
         </properties>
     </rule>
 
+    <!-- Капабилити WooCommerce: ядру WordPress они неизвестны. -->
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            <property name="custom_capabilities" type="array">
+                <element value="manage_woocommerce"/>
+            </property>
+        </properties>
+    </rule>
+
     <rule ref="PHPCompatibilityWP"/>
 </ruleset>

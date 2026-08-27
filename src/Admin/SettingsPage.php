@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Spoki\OzonDelivery\Admin;
 
+use Spoki\OzonDelivery\Api\ClientFactory;
 use WC_Settings_Page;
 
 defined( 'ABSPATH' ) || exit;
@@ -17,6 +18,12 @@ final class SettingsPage extends WC_Settings_Page {
 
 	private const SECRET_FIELD_TYPE = 'ozon_secret';
 
+	private const CONNECTION_FIELD_TYPE = 'ozon_connection';
+
+	public const TEST_ACTION = 'ozon_delivery_test_connection';
+
+	private const RESULT_TRANSIENT = 'ozon_delivery_connection_result';
+
 	private Settings $settings;
 
 	public function __construct() {
@@ -26,6 +33,8 @@ final class SettingsPage extends WC_Settings_Page {
 
 		add_action( 'woocommerce_admin_field_' . self::SECRET_FIELD_TYPE, array( $this, 'render_secret_field' ) );
 		add_action( 'woocommerce_update_option_' . self::SECRET_FIELD_TYPE, array( $this, 'save_secret_field' ) );
+		add_action( 'woocommerce_admin_field_' . self::CONNECTION_FIELD_TYPE, array( $this, 'render_connection_check' ) );
+		add_action( 'admin_post_' . self::TEST_ACTION, array( $this, 'handle_connection_check' ) );
 
 		parent::__construct();
 	}
@@ -40,7 +49,78 @@ final class SettingsPage extends WC_Settings_Page {
 			$fields[] = array_merge( $field, array( 'title' => $this->field_title( $field['id'] ) ) );
 		}
 
+		$fields[] = array(
+			'id'        => 'ozon_delivery_connection',
+			'type'      => self::CONNECTION_FIELD_TYPE,
+			'title'     => __( 'Подключение', 'ozon-delivery-for-woocommerce' ),
+			'is_option' => false,
+		);
+
 		return $fields;
+	}
+
+	/**
+	 * Кнопка «Проверить подключение» и результат последней проверки.
+	 */
+	public function render_connection_check(): void {
+		$result = get_transient( self::RESULT_TRANSIENT );
+
+		if ( is_array( $result ) ) {
+			delete_transient( self::RESULT_TRANSIENT );
+		}
+
+		echo '<tr valign="top"><th scope="row" class="titledesc">';
+		echo '<label>' . esc_html__( 'Подключение', 'ozon-delivery-for-woocommerce' ) . '</label>';
+		echo '</th><td class="forminp">';
+
+		printf(
+			'<a href="%s" class="button">%s</a>',
+			esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=' . self::TEST_ACTION ), self::TEST_ACTION ) ),
+			esc_html__( 'Проверить подключение', 'ozon-delivery-for-woocommerce' )
+		);
+
+		echo '<p class="description">';
+		esc_html_e(
+			'Отправляет запрос delivery-point/list с лимитом 1: ничего не создаёт, но проверяет ключи, токен и сеть целиком.',
+			'ozon-delivery-for-woocommerce'
+		);
+		echo '</p>';
+
+		if ( is_array( $result ) && isset( $result['message'] ) ) {
+			printf(
+				'<div class="notice inline notice-%s" style="margin:10px 0 0"><p>%s</p></div>',
+				empty( $result['ok'] ) ? 'error' : 'success',
+				esc_html( (string) $result['message'] )
+			);
+		}
+
+		echo '</td></tr>';
+	}
+
+	/**
+	 * Обработчик кнопки: гоняет проверку и возвращает администратора обратно
+	 * на вкладку настроек с результатом.
+	 */
+	public function handle_connection_check(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'Недостаточно прав.', 'ozon-delivery-for-woocommerce' ) );
+		}
+
+		check_admin_referer( self::TEST_ACTION );
+
+		$result = ( new HealthCheck( ClientFactory::create() ) )->run();
+
+		set_transient(
+			self::RESULT_TRANSIENT,
+			array(
+				'ok'      => $result->ok,
+				'message' => $result->message,
+			),
+			MINUTE_IN_SECONDS
+		);
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wc-settings&tab=' . $this->id ) );
+		exit;
 	}
 
 	/**

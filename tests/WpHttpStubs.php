@@ -86,6 +86,25 @@ trait WpHttpStubs {
 	}
 
 	/**
+	 * Убирает паузы между попытками там, где Transport собран не тестом
+	 * (например, через ClientFactory) и спит по-настоящему.
+	 *
+	 * Сами значения экспоненциальной паузы проверяются в TransportTest через
+	 * подставленный sleeper, поэтому здесь их обнуление ничего не скрывает.
+	 */
+	protected function stub_instant_retries(): void {
+		Functions\when( 'apply_filters' )->alias(
+			static function ( string $hook, $value = null ) {
+				if ( 'ozon_delivery_retry_delay' === $hook ) {
+					return 0;
+				}
+
+				return $value;
+			}
+		);
+	}
+
+	/**
 	 * Ставит в очередь ответы wp_remote_post и записывает аргументы вызовов.
 	 *
 	 * @param array<int, mixed> $responses
