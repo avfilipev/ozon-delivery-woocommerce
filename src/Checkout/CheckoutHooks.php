@@ -27,6 +27,7 @@ final class CheckoutHooks {
 
 	public function register(): void {
 		add_filter( 'woocommerce_shipping_methods', array( $this, 'register_shipping_method' ) );
+		add_filter( 'woocommerce_cart_shipping_packages', array( $this, 'add_choice_to_packages' ) );
 
 		( new PointPicker() )->register();
 		( new PickerField() )->register();
@@ -43,6 +44,52 @@ final class CheckoutHooks {
 		$methods[ Methods::PICKUP ] = MethodPickup::class;
 
 		return $methods;
+	}
+
+	/**
+	 * Кладёт выбор покупателя в пакет доставки.
+	 *
+	 * WooCommerce кэширует тарифы по хешу пакета. Выбранный ПВЗ и телефон
+	 * живут в сессии и в пакет не входят, поэтому без этого хеш не менялся:
+	 * покупатель выбирал точку, а цена не появлялась — отдавался прошлый
+	 * пустой результат. Оба значения влияют на тариф, значит оба обязаны
+	 * входить в хеш.
+	 *
+	 * @param array<int, array<string, mixed>> $packages
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function add_choice_to_packages( array $packages ): array {
+		$point_id = $this->state->chosen_point_id() ?? 0;
+		$phone    = $this->customer_phone();
+
+		foreach ( array_keys( $packages ) as $index ) {
+			$packages[ $index ]['ozon_delivery_point_id'] = $point_id;
+			$packages[ $index ]['ozon_delivery_phone']    = $phone;
+		}
+
+		return $packages;
+	}
+
+	private function customer_phone(): string {
+		if ( ! function_exists( 'WC' ) ) {
+			return '';
+		}
+
+		/** @var mixed $woocommerce */
+		$woocommerce = WC();
+
+		if ( ! is_object( $woocommerce ) ) {
+			return '';
+		}
+
+		$customer = $woocommerce->customer ?? null;
+
+		if ( ! is_object( $customer ) || ! is_callable( array( $customer, 'get_billing_phone' ) ) ) {
+			return '';
+		}
+
+		return (string) $customer->get_billing_phone();
 	}
 
 	/**

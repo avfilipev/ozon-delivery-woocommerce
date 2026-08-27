@@ -118,6 +118,63 @@ final class CheckoutHooksTest extends TestCase {
 		self::assertArrayHasKey( 'flat_rate', $methods, 'Чужие методы должны остаться.' );
 	}
 
+	/**
+	 * WooCommerce кэширует тарифы по хешу пакета доставки. Выбранный ПВЗ
+	 * лежит в сессии, а не в пакете, поэтому без этого хеш не менялся: цена
+	 * после выбора точки не появлялась вовсе, отдавался старый пустой ответ.
+	 */
+	public function test_chosen_point_goes_into_the_shipping_package(): void {
+		$this->session['ozon_delivery_point_id'] = 4242;
+
+		$packages = ( new CheckoutHooks() )->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		self::assertSame( 4242, $packages[0]['ozon_delivery_point_id'] );
+	}
+
+	public function test_different_points_give_different_packages(): void {
+		$hooks = new CheckoutHooks();
+
+		$this->session['ozon_delivery_point_id'] = 1;
+		$first                                   = $hooks->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		$this->session['ozon_delivery_point_id'] = 2;
+		$second                                  = $hooks->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		self::assertNotSame(
+			wp_json_encode( $first ),
+			wp_json_encode( $second ),
+			'Иначе WooCommerce отдаст закэшированный тариф от прошлой точки.'
+		);
+	}
+
+	/**
+	 * Тариф зависит и от телефона: по нему проверяется, обслуживается ли
+	 * покупатель Ozon. Смена телефона тоже обязана сбрасывать кэш.
+	 */
+	public function test_phone_goes_into_the_shipping_package(): void {
+		$packages = ( new CheckoutHooks() )->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		self::assertArrayHasKey( 'ozon_delivery_phone', $packages[0] );
+	}
+
+	public function test_every_package_gets_the_choice(): void {
+		$this->session['ozon_delivery_point_id'] = 4242;
+
+		$packages = ( new CheckoutHooks() )->add_choice_to_packages(
+			array( array( 'contents' => array() ), array( 'contents' => array() ) )
+		);
+
+		self::assertSame( 4242, $packages[0]['ozon_delivery_point_id'] );
+		self::assertSame( 4242, $packages[1]['ozon_delivery_point_id'] );
+	}
+
+	public function test_no_point_chosen_is_still_marked(): void {
+		$packages = ( new CheckoutHooks() )->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		self::assertArrayHasKey( 'ozon_delivery_point_id', $packages[0] );
+		self::assertSame( 0, $packages[0]['ozon_delivery_point_id'] );
+	}
+
 	public function test_chosen_point_is_saved_to_the_order(): void {
 		$this->rows                              = array( self::row( 4242 ) );
 		$this->session['ozon_delivery_point_id'] = 4242;
