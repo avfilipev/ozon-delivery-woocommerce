@@ -30,9 +30,18 @@ trait WpHttpStubs {
 	 */
 	protected array $logged = array();
 
+	/**
+	 * Транзиенты в памяти: TokenStore и CookieJar пишут в разные ключи,
+	 * поэтому подмена обязана их различать.
+	 *
+	 * @var array<string, mixed>
+	 */
+	protected array $transients = array();
+
 	protected function stub_wp_http(): void {
-		$this->calls  = array();
-		$this->logged = array();
+		$this->calls      = array();
+		$this->logged     = array();
+		$this->transients = array();
 
 		$wc_logger = Mockery::mock();
 		$wc_logger->shouldReceive( 'log' )->andReturnUsing(
@@ -42,9 +51,21 @@ trait WpHttpStubs {
 		);
 		Functions\when( 'wc_get_logger' )->justReturn( $wc_logger );
 
-		Functions\when( 'set_transient' )->justReturn( true );
-		Functions\when( 'delete_transient' )->justReturn( true );
-		Functions\when( 'get_transient' )->justReturn( false );
+		Functions\when( 'set_transient' )->alias(
+			function ( string $key, $value ): bool {
+				$this->transients[ $key ] = $value;
+				return true;
+			}
+		);
+		Functions\when( 'delete_transient' )->alias(
+			function ( string $key ): bool {
+				unset( $this->transients[ $key ] );
+				return true;
+			}
+		);
+		Functions\when( 'get_transient' )->alias(
+			fn( string $key ) => $this->transients[ $key ] ?? false
+		);
 
 		Functions\when( 'wp_json_encode' )->alias(
 			static fn( $data ) => json_encode( $data ) // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
