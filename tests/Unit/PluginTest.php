@@ -57,6 +57,17 @@ final class PluginTest extends TestCase {
 		$this->expectNotToPerformAssertions();
 	}
 
+	/**
+	 * Без этого на экране заказа не будет ни данных Ozon, ни кнопки передачи.
+	 */
+	public function test_boot_registers_the_order_metabox(): void {
+		Actions\expectAdded( 'add_meta_boxes' )->once();
+
+		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+
+		$this->expectNotToPerformAssertions();
+	}
+
 	public function test_activate_schedules_the_daily_catalogue_sync(): void {
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';

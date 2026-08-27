@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Spoki\OzonDelivery;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
+use Spoki\OzonDelivery\Admin\OrderMetabox;
 use Spoki\OzonDelivery\Admin\SettingsPage;
 use Spoki\OzonDelivery\Checkout\CheckoutHooks;
 use Spoki\OzonDelivery\Install\Migrations;
@@ -26,6 +27,7 @@ final class Plugin {
 		// Без слушателя Action Scheduler поставит задачу в очередь, а выполнять
 		// её будет некому. Задача собирается лениво, уже в момент выполнения.
 		( new CheckoutHooks() )->register();
+		( new OrderMetabox() )->register();
 
 		add_action(
 			SyncPointsJob::HOOK,
