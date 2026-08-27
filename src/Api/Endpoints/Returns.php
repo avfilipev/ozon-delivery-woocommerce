@@ -28,13 +28,18 @@ final class Returns {
 
 	private const RESET_BARCODE_PATH = '/v1/return/reset_barcode';
 
-	public const DEFAULT_PAGE_SIZE = 100;
+	/**
+	 * Тот же потолок, что у каталога ПВЗ: у Ozon страница не больше 100.
+	 */
+	public const MAX_PAGE_SIZE = 100;
+
+	public const DEFAULT_PAGE_SIZE = self::MAX_PAGE_SIZE;
 
 	public function __construct( private readonly Client $client ) {
 	}
 
 	public function search( ?string $cursor = null, int $limit = self::DEFAULT_PAGE_SIZE ): ReturnsPage {
-		$pagination = array( 'limit' => $limit );
+		$pagination = array( 'limit' => max( 1, min( self::MAX_PAGE_SIZE, $limit ) ) );
 
 		if ( null !== $cursor && '' !== $cursor ) {
 			$pagination['cursor'] = $cursor;

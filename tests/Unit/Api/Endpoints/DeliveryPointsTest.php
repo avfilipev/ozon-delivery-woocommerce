@@ -49,13 +49,41 @@ final class DeliveryPointsTest extends TestCase {
 	public function test_list_page_requests_the_catalogue_with_a_limit(): void {
 		$this->queue( array( self::json( array( 'delivery_points' => array() ) ) ) );
 
-		$this->endpoint()->list_page( null, 500 );
+		$this->endpoint()->list_page( null, 100 );
 
 		self::assertSame( 'https://api-delivery.ozon.ru/v1/delivery-point/list', $this->calls[0]['url'] );
 
 		$sent = json_decode( $this->calls[0]['args']['body'], true );
 
-		self::assertSame( array( 'limit' => 500 ), $sent['pagination'] );
+		self::assertSame( array( 'limit' => 100 ), $sent['pagination'] );
+	}
+
+	/**
+	 * Ozon отвечает 400, если limit больше 100: «Размер страницы должен быть
+	 * от 1 до 100». В docs/API.md предел не указан — выяснилось на боевом API.
+	 */
+	public function test_page_size_is_clamped_to_the_allowed_range(): void {
+		$this->queue( array( self::json( array( 'delivery_points' => array() ) ) ) );
+
+		$this->endpoint()->list_page( null, 500 );
+
+		$sent = json_decode( $this->calls[0]['args']['body'], true );
+
+		self::assertSame( DeliveryPoints::MAX_PAGE_SIZE, $sent['pagination']['limit'] );
+	}
+
+	public function test_page_size_below_one_is_clamped(): void {
+		$this->queue( array( self::json( array( 'delivery_points' => array() ) ) ) );
+
+		$this->endpoint()->list_page( null, 0 );
+
+		$sent = json_decode( $this->calls[0]['args']['body'], true );
+
+		self::assertSame( 1, $sent['pagination']['limit'] );
+	}
+
+	public function test_default_page_size_is_within_the_limit(): void {
+		self::assertLessThanOrEqual( DeliveryPoints::MAX_PAGE_SIZE, DeliveryPoints::DEFAULT_PAGE_SIZE );
 	}
 
 	public function test_list_page_passes_the_cursor_when_continuing(): void {

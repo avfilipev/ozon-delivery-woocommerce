@@ -15,11 +15,16 @@ use Spoki\OzonDelivery\Tests\TestCase;
 final class PluginTest extends TestCase {
 
 	/**
-	 * boot() читает ключи из .env.local. В тестах опции пусты, файла нет —
-	 * подставляется только чтение опций.
+	 * boot() читает ключи из .env.local и заполняет ими пустые опции.
+	 *
+	 * Оба обращения подменяются намеренно: иначе тест зависел бы от того,
+	 * есть ли .env.local на машине разработчика, и мог бы писать в опции
+	 * реальные ключи.
 	 */
 	private function boot(): void {
 		Functions\when( 'get_option' )->justReturn( '' );
+		Functions\when( 'update_option' )->justReturn( true );
+		Functions\when( 'sanitize_text_field' )->returnArg( 1 );
 
 		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
 	}

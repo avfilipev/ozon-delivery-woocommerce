@@ -25,9 +25,16 @@ final class DeliveryPoints {
 	private const AVAILABILITY_PATH = '/v1/delivery-point/check-availability';
 
 	/**
+	 * Потолок размера страницы у Ozon. В docs/API.md не указан — выяснился на
+	 * боевом API: при большем значении приходит 400 «Размер страницы должен
+	 * быть от 1 до 100».
+	 */
+	public const MAX_PAGE_SIZE = 100;
+
+	/**
 	 * Сколько точек запрашивать за один шаг обхода каталога.
 	 */
-	public const DEFAULT_PAGE_SIZE = 500;
+	public const DEFAULT_PAGE_SIZE = self::MAX_PAGE_SIZE;
 
 	/**
 	 * delivery-point/info принимает массив идентификаторов; пачку держим
@@ -42,7 +49,7 @@ final class DeliveryPoints {
 	 * Одна страница каталога. Пагинация курсорная: null — начать сначала.
 	 */
 	public function list_page( ?string $cursor = null, int $limit = self::DEFAULT_PAGE_SIZE ): CatalogPage {
-		$pagination = array( 'limit' => $limit );
+		$pagination = array( 'limit' => max( 1, min( self::MAX_PAGE_SIZE, $limit ) ) );
 
 		if ( null !== $cursor && '' !== $cursor ) {
 			$pagination['cursor'] = $cursor;
