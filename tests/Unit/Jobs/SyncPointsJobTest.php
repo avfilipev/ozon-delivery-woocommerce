@@ -160,7 +160,7 @@ final class SyncPointsJobTest extends TestCase {
 	}
 
 	public function test_daily_schedule_is_registered_once(): void {
-		$this->job()->schedule_daily();
+		SyncPointsJob::schedule_daily();
 
 		self::assertCount( 1, $this->recurring );
 		self::assertSame( DAY_IN_SECONDS, $this->recurring[0]['interval'] );
@@ -169,13 +169,13 @@ final class SyncPointsJobTest extends TestCase {
 	public function test_daily_schedule_is_not_duplicated(): void {
 		$this->has_scheduled = true;
 
-		$this->job()->schedule_daily();
+		SyncPointsJob::schedule_daily();
 
 		self::assertSame( array(), $this->recurring );
 	}
 
 	public function test_unschedule_clears_the_hook(): void {
-		$this->job()->unschedule();
+		SyncPointsJob::unschedule();
 
 		self::assertContains( SyncPointsJob::HOOK, $this->unscheduled );
 	}

@@ -7,6 +7,7 @@ namespace Spoki\OzonDelivery;
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use Spoki\OzonDelivery\Admin\SettingsPage;
 use Spoki\OzonDelivery\Install\Migrations;
+use Spoki\OzonDelivery\Jobs\SyncPointsJob;
 
 /**
  * Оркестрация плагина после того, как Requirements подтвердил, что версии
@@ -20,6 +21,15 @@ final class Plugin {
 	public function boot(): void {
 		add_action( 'before_woocommerce_init', array( $this, 'declare_compatibility' ) );
 		add_filter( 'woocommerce_get_settings_pages', array( $this, 'register_settings_page' ) );
+
+		// Без слушателя Action Scheduler поставит задачу в очередь, а выполнять
+		// её будет некому. Задача собирается лениво, уже в момент выполнения.
+		add_action(
+			SyncPointsJob::HOOK,
+			static function (): void {
+				SyncPointsJob::create()->run();
+			}
+		);
 	}
 
 	/**
@@ -44,5 +54,15 @@ final class Plugin {
 
 	public function activate(): void {
 		( new Migrations() )->run();
+
+		SyncPointsJob::schedule_daily();
+	}
+
+	/**
+	 * Фоновые задачи снимаются с расписания, чтобы отключённый плагин не
+	 * оставлял за собой работу в очереди.
+	 */
+	public function deactivate(): void {
+		SyncPointsJob::unschedule();
 	}
 }

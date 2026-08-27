@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Spoki\OzonDelivery\Jobs;
 
+use Spoki\OzonDelivery\Api\ClientFactory;
+use Spoki\OzonDelivery\Api\Endpoints\DeliveryPoints;
 use Spoki\OzonDelivery\Api\Exception\ApiException;
 use Spoki\OzonDelivery\Points\CatalogSync;
+use Spoki\OzonDelivery\Points\Repository;
 use Spoki\OzonDelivery\Support\Logger;
 use Throwable;
 
@@ -36,8 +39,22 @@ final class SyncPointsJob {
 	) {
 	}
 
-	public function register(): void {
-		add_action( self::HOOK, array( $this, 'run' ) );
+	/**
+	 * Собирает задачу со всеми зависимостями. Вызывается лениво, уже в момент
+	 * выполнения: строить клиента и читать настройки на каждом запросе
+	 * WordPress незачем.
+	 */
+	public static function create(): self {
+		$logger = new Logger();
+
+		return new self(
+			new CatalogSync(
+				new DeliveryPoints( ClientFactory::create() ),
+				new Repository(),
+				$logger
+			),
+			$logger
+		);
 	}
 
 	/**
@@ -46,13 +63,13 @@ final class SyncPointsJob {
 	public function start_now(): void {
 		$this->sync->start();
 
-		$this->schedule_step();
+		self::schedule_step();
 	}
 
 	/**
 	 * Ставит ежедневное обновление каталога, если его ещё нет.
 	 */
-	public function schedule_daily(): void {
+	public static function schedule_daily(): void {
 		if ( ! function_exists( 'as_schedule_recurring_action' ) ) {
 			return;
 		}
@@ -71,7 +88,7 @@ final class SyncPointsJob {
 		as_schedule_recurring_action( time() + $interval, $interval, self::HOOK, array(), self::GROUP );
 	}
 
-	public function unschedule(): void {
+	public static function unschedule(): void {
 		if ( function_exists( 'as_unschedule_all_actions' ) ) {
 			as_unschedule_all_actions( self::HOOK, array(), self::GROUP );
 		}
@@ -94,7 +111,7 @@ final class SyncPointsJob {
 				array( 'error' => $e->getMessage() )
 			);
 
-			$this->schedule_step( self::RETRY_DELAY );
+			self::schedule_step( self::RETRY_DELAY );
 
 			return;
 		} catch ( Throwable $e ) {
@@ -108,11 +125,11 @@ final class SyncPointsJob {
 		}
 
 		if ( ! $state->finished ) {
-			$this->schedule_step();
+			self::schedule_step();
 		}
 	}
 
-	private function schedule_step( int $delay = 0 ): void {
+	private static function schedule_step( int $delay = 0 ): void {
 		if ( ! function_exists( 'as_schedule_single_action' ) ) {
 			return;
 		}

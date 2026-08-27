@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Spoki\OzonDelivery\Admin;
 
 use Spoki\OzonDelivery\Api\ClientFactory;
+use Spoki\OzonDelivery\Api\Endpoints\DeliveryPoints;
+use Spoki\OzonDelivery\Jobs\SyncPointsJob;
+use Spoki\OzonDelivery\Points\CatalogSync;
+use Spoki\OzonDelivery\Points\Repository;
+use Spoki\OzonDelivery\Support\Logger;
 use WC_Settings_Page;
 
 defined( 'ABSPATH' ) || exit;
@@ -20,7 +25,11 @@ final class SettingsPage extends WC_Settings_Page {
 
 	private const CONNECTION_FIELD_TYPE = 'ozon_connection';
 
+	private const CATALOG_FIELD_TYPE = 'ozon_catalog';
+
 	public const TEST_ACTION = 'ozon_delivery_test_connection';
+
+	public const SYNC_ACTION = 'ozon_delivery_sync_points';
 
 	private const RESULT_TRANSIENT = 'ozon_delivery_connection_result';
 
@@ -34,7 +43,9 @@ final class SettingsPage extends WC_Settings_Page {
 		add_action( 'woocommerce_admin_field_' . self::SECRET_FIELD_TYPE, array( $this, 'render_secret_field' ) );
 		add_action( 'woocommerce_update_option_' . self::SECRET_FIELD_TYPE, array( $this, 'save_secret_field' ) );
 		add_action( 'woocommerce_admin_field_' . self::CONNECTION_FIELD_TYPE, array( $this, 'render_connection_check' ) );
+		add_action( 'woocommerce_admin_field_' . self::CATALOG_FIELD_TYPE, array( $this, 'render_catalog_status' ) );
 		add_action( 'admin_post_' . self::TEST_ACTION, array( $this, 'handle_connection_check' ) );
+		add_action( 'admin_post_' . self::SYNC_ACTION, array( $this, 'handle_points_sync' ) );
 
 		parent::__construct();
 	}
@@ -56,7 +67,65 @@ final class SettingsPage extends WC_Settings_Page {
 			'is_option' => false,
 		);
 
+		$fields[] = array(
+			'id'        => 'ozon_delivery_catalog',
+			'type'      => self::CATALOG_FIELD_TYPE,
+			'title'     => __( 'Каталог пунктов выдачи', 'ozon-delivery-for-woocommerce' ),
+			'is_option' => false,
+		);
+
 		return $fields;
+	}
+
+	/**
+	 * Состояние локального каталога ПВЗ и кнопка запуска синхронизации.
+	 */
+	public function render_catalog_status(): void {
+		$status = new CatalogStatus(
+			new Repository(),
+			new CatalogSync(
+				new DeliveryPoints( ClientFactory::create() ),
+				new Repository(),
+				new Logger()
+			)
+		);
+
+		echo '<tr valign="top"><th scope="row" class="titledesc">';
+		echo '<label>' . esc_html__( 'Каталог пунктов выдачи', 'ozon-delivery-for-woocommerce' ) . '</label>';
+		echo '</th><td class="forminp">';
+
+		echo '<p>' . esc_html( $status->describe() ) . '</p>';
+
+		printf(
+			'<a href="%s" class="button">%s</a>',
+			esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=' . self::SYNC_ACTION ), self::SYNC_ACTION ) ),
+			esc_html__( 'Обновить каталог', 'ozon-delivery-for-woocommerce' )
+		);
+
+		echo '<p class="description">';
+		esc_html_e(
+			'Обход идёт в фоне порциями: каталог у Ozon большой, а адреса добираются отдельными запросами. Обрыв продолжится с того же места.',
+			'ozon-delivery-for-woocommerce'
+		);
+		echo '</p>';
+
+		echo '</td></tr>';
+	}
+
+	/**
+	 * Запускает обход каталога заново.
+	 */
+	public function handle_points_sync(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_die( esc_html__( 'Недостаточно прав.', 'ozon-delivery-for-woocommerce' ) );
+		}
+
+		check_admin_referer( self::SYNC_ACTION );
+
+		SyncPointsJob::create()->start_now();
+
+		wp_safe_redirect( admin_url( 'admin.php?page=wc-settings&tab=' . $this->id ) );
+		exit;
 	}
 
 	/**
