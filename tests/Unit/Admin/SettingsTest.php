@@ -17,7 +17,7 @@ final class SettingsTest extends TestCase {
 		Functions\when( 'sanitize_text_field' )->returnArg( 1 );
 	}
 
-	public function test_get_fields_returns_five_expected_fields_in_order(): void {
+	public function test_get_fields_returns_the_expected_fields_in_order(): void {
 		$ids = array_column( ( new Settings() )->get_fields(), 'id' );
 
 		self::assertSame(
@@ -27,8 +27,41 @@ final class SettingsTest extends TestCase {
 				Settings::FIELD_SCOPE,
 				Settings::FIELD_SHIPMENT_METHOD_ID,
 				Settings::FIELD_DRY_RUN,
+				Settings::FIELD_DEFAULT_WEIGHT,
+				Settings::FIELD_DEFAULT_LENGTH,
+				Settings::FIELD_DEFAULT_WIDTH,
+				Settings::FIELD_DEFAULT_HEIGHT,
+				Settings::FIELD_PACKAGING_PADDING,
+				Settings::FIELD_DECLARED_PERCENT,
 			),
 			$ids
+		);
+	}
+
+	/**
+	 * Габариты по умолчанию нужны Ozon всегда, поэтому пустыми они быть
+	 * не должны даже на свежей установке.
+	 *
+	 * @dataProvider packaging_field_provider
+	 */
+	public function test_packaging_fields_have_usable_defaults( string $field ): void {
+		$fields = array_column( ( new Settings() )->get_fields(), 'default', 'id' );
+
+		self::assertArrayHasKey( $field, $fields );
+		self::assertNotSame( '', $fields[ $field ] );
+		self::assertGreaterThan( 0, (float) $fields[ $field ] );
+	}
+
+	/**
+	 * @return array<string, array{0: string}>
+	 */
+	public static function packaging_field_provider(): array {
+		return array(
+			'вес'     => array( Settings::FIELD_DEFAULT_WEIGHT ),
+			'длина'   => array( Settings::FIELD_DEFAULT_LENGTH ),
+			'ширина'  => array( Settings::FIELD_DEFAULT_WIDTH ),
+			'высота'  => array( Settings::FIELD_DEFAULT_HEIGHT ),
+			'процент' => array( Settings::FIELD_DECLARED_PERCENT ),
 		);
 	}
 

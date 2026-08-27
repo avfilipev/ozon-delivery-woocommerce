@@ -16,6 +16,13 @@ final class Settings {
 	public const FIELD_SHIPMENT_METHOD_ID = 'ozon_delivery_shipment_method_id';
 	public const FIELD_DRY_RUN            = 'ozon_delivery_dry_run';
 
+	public const FIELD_DEFAULT_WEIGHT    = 'ozon_delivery_default_weight';
+	public const FIELD_DEFAULT_LENGTH    = 'ozon_delivery_default_length';
+	public const FIELD_DEFAULT_WIDTH     = 'ozon_delivery_default_width';
+	public const FIELD_DEFAULT_HEIGHT    = 'ozon_delivery_default_height';
+	public const FIELD_PACKAGING_PADDING = 'ozon_delivery_packaging_padding';
+	public const FIELD_DECLARED_PERCENT  = 'ozon_delivery_declared_value_percent';
+
 	/**
 	 * @return array<int, array{id: string, type: string, default: string}>
 	 */
@@ -45,6 +52,38 @@ final class Settings {
 				'id'      => self::FIELD_DRY_RUN,
 				'type'    => 'checkbox',
 				'default' => 'yes',
+			),
+			// Габариты по умолчанию — в тех единицах, что настроены в WooCommerce.
+			// Перевод в граммы и миллиметры делает Shipping\Dimensions.
+			array(
+				'id'      => self::FIELD_DEFAULT_WEIGHT,
+				'type'    => 'text',
+				'default' => '0.5',
+			),
+			array(
+				'id'      => self::FIELD_DEFAULT_LENGTH,
+				'type'    => 'text',
+				'default' => '20',
+			),
+			array(
+				'id'      => self::FIELD_DEFAULT_WIDTH,
+				'type'    => 'text',
+				'default' => '15',
+			),
+			array(
+				'id'      => self::FIELD_DEFAULT_HEIGHT,
+				'type'    => 'text',
+				'default' => '10',
+			),
+			array(
+				'id'      => self::FIELD_PACKAGING_PADDING,
+				'type'    => 'text',
+				'default' => '10',
+			),
+			array(
+				'id'      => self::FIELD_DECLARED_PERCENT,
+				'type'    => 'text',
+				'default' => '100',
 			),
 		);
 	}

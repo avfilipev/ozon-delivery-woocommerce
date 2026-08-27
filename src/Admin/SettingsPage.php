@@ -238,6 +238,18 @@ final class SettingsPage extends WC_Settings_Page {
 				return __( 'Shipment Method ID', 'ozon-delivery-for-woocommerce' );
 			case Settings::FIELD_DRY_RUN:
 				return __( 'Dry-run: не отправлять запросы на запись', 'ozon-delivery-for-woocommerce' );
+			case Settings::FIELD_DEFAULT_WEIGHT:
+				return __( 'Вес по умолчанию (единицы WooCommerce)', 'ozon-delivery-for-woocommerce' );
+			case Settings::FIELD_DEFAULT_LENGTH:
+				return __( 'Длина по умолчанию (единицы WooCommerce)', 'ozon-delivery-for-woocommerce' );
+			case Settings::FIELD_DEFAULT_WIDTH:
+				return __( 'Ширина по умолчанию (единицы WooCommerce)', 'ozon-delivery-for-woocommerce' );
+			case Settings::FIELD_DEFAULT_HEIGHT:
+				return __( 'Высота по умолчанию (единицы WooCommerce)', 'ozon-delivery-for-woocommerce' );
+			case Settings::FIELD_PACKAGING_PADDING:
+				return __( 'Запас на упаковку, мм', 'ozon-delivery-for-woocommerce' );
+			case Settings::FIELD_DECLARED_PERCENT:
+				return __( 'Объявленная стоимость, % от суммы заказа', 'ozon-delivery-for-woocommerce' );
 			default:
 				return $id;
 		}
