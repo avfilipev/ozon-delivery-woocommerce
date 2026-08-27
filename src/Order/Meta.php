@@ -41,6 +41,8 @@ final class Meta {
 
 	public const IDEMPOTENCY_KEY = '_ozon_delivery_idempotency_key';
 
+	public const POSTING_STATUS = '_ozon_delivery_posting_status';
+
 	public static function save_point( object $order, DeliveryPoint $point ): void {
 		$order->update_meta_data( self::POINT_ID, $point->delivery_point_id );
 		$order->update_meta_data( self::POINT_NAME, $point->name );

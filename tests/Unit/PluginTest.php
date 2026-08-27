@@ -68,6 +68,17 @@ final class PluginTest extends TestCase {
 		$this->expectNotToPerformAssertions();
 	}
 
+	/**
+	 * Вебхуков у Ozon нет: без слушателя статусы никогда не обновятся.
+	 */
+	public function test_boot_registers_the_status_sync_job(): void {
+		Actions\expectAdded( 'ozon_delivery_sync_statuses' )->once();
+
+		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+
+		$this->expectNotToPerformAssertions();
+	}
+
 	public function test_activate_schedules_the_daily_catalogue_sync(): void {
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
@@ -92,6 +103,7 @@ final class PluginTest extends TestCase {
 		unset( $GLOBALS['wpdb'] );
 
 		self::assertContains( 'ozon_delivery_sync_points', $recurring );
+		self::assertContains( 'ozon_delivery_sync_statuses', $recurring );
 	}
 
 	public function test_deactivate_unschedules_background_work(): void {
@@ -106,6 +118,7 @@ final class PluginTest extends TestCase {
 		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->deactivate();
 
 		self::assertContains( 'ozon_delivery_sync_points', $unscheduled );
+		self::assertContains( 'ozon_delivery_sync_statuses', $unscheduled );
 	}
 
 	public function test_declare_compatibility_declares_hpos_support_and_checkout_blocks_incompatibility(): void {

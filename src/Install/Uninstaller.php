@@ -8,6 +8,7 @@ use Spoki\OzonDelivery\Admin\Settings;
 use Spoki\OzonDelivery\Api\CookieJar;
 use Spoki\OzonDelivery\Api\TokenStore;
 use Spoki\OzonDelivery\Jobs\SyncPointsJob;
+use Spoki\OzonDelivery\Jobs\SyncStatusesJob;
 use Spoki\OzonDelivery\Points\CatalogSync;
 
 /**
@@ -47,6 +48,7 @@ final class Uninstaller {
 		$this->drop_tables();
 
 		SyncPointsJob::unschedule();
+		SyncStatusesJob::unschedule();
 	}
 
 	/**

@@ -10,6 +10,7 @@ use Spoki\OzonDelivery\Admin\SettingsPage;
 use Spoki\OzonDelivery\Checkout\CheckoutHooks;
 use Spoki\OzonDelivery\Install\Migrations;
 use Spoki\OzonDelivery\Jobs\SyncPointsJob;
+use Spoki\OzonDelivery\Jobs\SyncStatusesJob;
 
 /**
  * Оркестрация плагина после того, как Requirements подтвердил, что версии
@@ -33,6 +34,13 @@ final class Plugin {
 			SyncPointsJob::HOOK,
 			static function (): void {
 				SyncPointsJob::create()->run();
+			}
+		);
+
+		add_action(
+			SyncStatusesJob::HOOK,
+			static function (): void {
+				SyncStatusesJob::create()->run();
 			}
 		);
 	}
@@ -61,6 +69,7 @@ final class Plugin {
 		( new Migrations() )->run();
 
 		SyncPointsJob::schedule_daily();
+		SyncStatusesJob::schedule_hourly();
 	}
 
 	/**
@@ -69,5 +78,6 @@ final class Plugin {
 	 */
 	public function deactivate(): void {
 		SyncPointsJob::unschedule();
+		SyncStatusesJob::unschedule();
 	}
 }
