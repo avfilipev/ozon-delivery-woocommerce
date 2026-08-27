@@ -35,6 +35,28 @@ final class PluginTest extends TestCase {
 		$this->expectNotToPerformAssertions();
 	}
 
+	/**
+	 * Без этого метод доставки не появится в зонах WooCommerce.
+	 */
+	public function test_boot_registers_the_shipping_method(): void {
+		Filters\expectAdded( 'woocommerce_shipping_methods' )->once();
+
+		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+
+		$this->expectNotToPerformAssertions();
+	}
+
+	/**
+	 * Выбранный ПВЗ должен попасть в заказ при оформлении.
+	 */
+	public function test_boot_hooks_into_order_creation(): void {
+		Actions\expectAdded( 'woocommerce_checkout_create_order' )->once();
+
+		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+
+		$this->expectNotToPerformAssertions();
+	}
+
 	public function test_activate_schedules_the_daily_catalogue_sync(): void {
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
