@@ -167,6 +167,16 @@ final class ClientTest extends TestCase {
 		$this->client()->post( '/v1/posting/info', array() );
 	}
 
+	/**
+	 * posting/approve и posting/cancel по спецификации отвечают «200 без
+	 * тела»: это успех, а не нечитаемый ответ.
+	 */
+	public function test_empty_body_is_decoded_as_an_empty_result(): void {
+		$this->queue( array( self::response( 200, array(), '' ) ) );
+
+		self::assertSame( array(), $this->client()->post( '/v1/posting/approve', array() ) );
+	}
+
 	public function test_malformed_json_throws_api_exception(): void {
 		$this->queue( array( self::response( 200, array(), 'not json' ) ) );
 

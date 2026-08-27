@@ -16,7 +16,11 @@ final class Response {
 	public function __construct(
 		public readonly int $status,
 		public readonly string $body,
-		public readonly string $trace_id
+		public readonly string $trace_id,
+		/**
+		 * Нужен там, где Ozon отдаёт файл, а не JSON: этикетка posting/label.
+		 */
+		public readonly string $content_type = ''
 	) {
 	}
 }

@@ -123,7 +123,12 @@ final class Transport {
 				);
 			}
 
-			return new Response( $status, (string) wp_remote_retrieve_body( $raw ), $trace_id );
+			return new Response(
+				$status,
+				(string) wp_remote_retrieve_body( $raw ),
+				$trace_id,
+				(string) wp_remote_retrieve_header( $raw, 'content-type' )
+			);
 		}
 	}
 

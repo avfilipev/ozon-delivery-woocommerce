@@ -102,6 +102,38 @@ final class Client {
 	}
 
 	/**
+	 * Запрос без разбора JSON: нужен там, где Ozon отдаёт файл, а не JSON —
+	 * например этикетка posting/label.
+	 *
+	 * @param array<string, mixed>  $payload
+	 * @param array<string, string> $headers
+	 *
+	 * @throws DryRunException Метод на запись при включённом dry-run.
+	 * @throws AuthException   Токен получить или обновить не удалось.
+	 * @throws ApiException    Ozon ответил кодом ошибки.
+	 */
+	public function post_raw( string $path, array $payload, array $headers = array() ): Response {
+		$this->guard_idempotency_key( $path, $headers );
+		$this->guard_dry_run( $path, $payload );
+
+		$body = (string) wp_json_encode( $payload );
+
+		$response = $this->send( $path, $body, $headers );
+
+		if ( 401 === $response->status ) {
+			$this->tokens->forget();
+
+			$response = $this->send( $path, $body, $headers );
+		}
+
+		if ( $response->status < 200 || $response->status > 299 ) {
+			throw new ApiException( $this->error_message( $response ) );
+		}
+
+		return $response;
+	}
+
+	/**
 	 * @param array<string, string> $headers
 	 */
 	private function send( string $path, string $body, array $headers ): Response {
@@ -176,6 +208,12 @@ final class Client {
 	 * @throws ApiException
 	 */
 	private function decode( Response $response ): array {
+		// posting/approve и posting/cancel по спецификации отвечают «200 без
+		// тела» — это штатный успех, а не нечитаемый JSON.
+		if ( '' === trim( $response->body ) ) {
+			return array();
+		}
+
 		$decoded = json_decode( $response->body, true );
 
 		if ( ! is_array( $decoded ) ) {
