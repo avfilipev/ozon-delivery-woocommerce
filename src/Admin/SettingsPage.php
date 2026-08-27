@@ -12,7 +12,6 @@ use Spoki\OzonDelivery\Points\Repository;
 use Spoki\OzonDelivery\Support\Logger;
 use WC_Settings_Page;
 
-defined( 'ABSPATH' ) || exit;
 
 /**
  * Обвязка Settings под WooCommerce Settings API. Не юнит-тестируется —

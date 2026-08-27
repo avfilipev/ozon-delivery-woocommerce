@@ -11,7 +11,6 @@ use Spoki\OzonDelivery\Checkout\SessionState;
 use Spoki\OzonDelivery\Support\Logger;
 use WC_Shipping_Method;
 
-defined( 'ABSPATH' ) || exit;
 
 /**
  * Метод доставки «Ozon: пункт выдачи».

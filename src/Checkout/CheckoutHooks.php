@@ -27,6 +27,9 @@ final class CheckoutHooks {
 
 	public function register(): void {
 		add_filter( 'woocommerce_shipping_methods', array( $this, 'register_shipping_method' ) );
+
+		( new PointPicker() )->register();
+		( new PickerField() )->register();
 		add_action( 'woocommerce_checkout_create_order', array( $this, 'save_point_to_order' ) );
 		add_action( 'woocommerce_review_order_after_shipping', array( $this, 'render_notice' ) );
 	}
