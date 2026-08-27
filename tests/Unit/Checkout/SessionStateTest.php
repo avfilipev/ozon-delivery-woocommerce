@@ -75,17 +75,40 @@ final class SessionStateTest extends TestCase {
 	 * Правило 5: ошибка расчёта не идёт через wc_add_notice('error'), иначе
 	 * её поймает check_cart_items() и уронит весь чекаут. Она живёт здесь.
 	 */
-	public function test_notice_is_remembered_and_taken_once(): void {
+	public function test_notice_is_remembered(): void {
 		$state = new SessionState();
 
 		$state->remember_notice( 'Не удалось рассчитать доставку.' );
 
-		self::assertSame( 'Не удалось рассчитать доставку.', $state->take_notice() );
-		self::assertNull( $state->take_notice(), 'Сообщение должно показываться один раз.' );
+		self::assertSame( 'Не удалось рассчитать доставку.', $state->current_notice() );
+	}
+
+	/**
+	 * Сообщение обязано пережить перерисовку чекаута.
+	 *
+	 * Раньше оно забиралось один раз — и это молча ломало главный сценарий.
+	 * WooCommerce кэширует тарифы по отпечатку пакета: пока покупатель не
+	 * менял ни точку, ни телефон, расчёт повторно не запускается и сообщение
+	 * заново не появляется. Покупатель видел объяснение один раз, а дальше
+	 * оставался с пустой строкой доставки и без единой подсказки.
+	 *
+	 * Причина отпала — сообщение снимает тот, кто её устранил.
+	 */
+	public function test_notice_survives_repeated_rendering(): void {
+		$state = new SessionState();
+
+		$state->remember_notice( 'Выберите пункт выдачи.' );
+
+		self::assertSame( 'Выберите пункт выдачи.', $state->current_notice() );
+		self::assertSame( 'Выберите пункт выдачи.', $state->current_notice() );
+
+		$state->forget_notice();
+
+		self::assertNull( $state->current_notice() );
 	}
 
 	public function test_no_notice_by_default(): void {
-		self::assertNull( ( new SessionState() )->take_notice() );
+		self::assertNull( ( new SessionState() )->current_notice() );
 	}
 
 	public function test_empty_notice_is_not_stored(): void {
@@ -93,7 +116,7 @@ final class SessionStateTest extends TestCase {
 
 		$state->remember_notice( '   ' );
 
-		self::assertNull( $state->take_notice() );
+		self::assertNull( $state->current_notice() );
 	}
 
 	/**
@@ -109,6 +132,6 @@ final class SessionStateTest extends TestCase {
 		$state->remember_notice( 'что-то' );
 
 		self::assertNull( $state->chosen_point_id() );
-		self::assertNull( $state->take_notice() );
+		self::assertNull( $state->current_notice() );
 	}
 }

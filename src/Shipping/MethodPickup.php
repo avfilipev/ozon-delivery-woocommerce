@@ -7,6 +7,7 @@ namespace Spoki\OzonDelivery\Shipping;
 use Spoki\OzonDelivery\Api\ClientFactory;
 use Spoki\OzonDelivery\Api\Endpoints\Delivery;
 use Spoki\OzonDelivery\Checkout\ClientCheck;
+use Spoki\OzonDelivery\Checkout\CustomerPhone;
 use Spoki\OzonDelivery\Checkout\SessionState;
 use Spoki\OzonDelivery\Support\Logger;
 use WC_Shipping_Method;
@@ -106,7 +107,21 @@ final class MethodPickup extends WC_Shipping_Method {
 			return;
 		}
 
-		$phone = $this->customer_phone();
+		$phone = ( new CustomerPhone() )->resolve();
+
+		// Пустой номер и номер, которого Ozon не знает, — разные беды, и
+		// советы у них разные. Раньше на оба случай был один ответ «проверьте
+		// номер», хотя проверять было нечего: телефон до расчёта не доходил.
+		if ( '' === $phone ) {
+			$state->remember_notice(
+				__(
+					'Укажите номер телефона: по нему Ozon проверяет покупателя и считает доставку.',
+					'ozon-delivery-for-woocommerce'
+				)
+			);
+
+			return;
+		}
 
 		if ( ! $this->client_check()->can_deliver_to( $phone ) ) {
 			$state->remember_notice(
@@ -134,6 +149,9 @@ final class MethodPickup extends WC_Shipping_Method {
 			return;
 		}
 
+		// Тариф есть — прошлое объяснение больше не про этот расчёт.
+		$state->forget_notice();
+
 		$this->add_rate(
 			array(
 				'id'        => $this->get_rate_id(),
@@ -147,31 +165,6 @@ final class MethodPickup extends WC_Shipping_Method {
 				),
 			)
 		);
-	}
-
-	/**
-	 * Телефон берётся из данных покупателя: во время чекаута WooCommerce
-	 * обновляет их из отправленной формы.
-	 */
-	private function customer_phone(): string {
-		if ( ! function_exists( 'WC' ) ) {
-			return '';
-		}
-
-		/** @var mixed $woocommerce */
-		$woocommerce = WC();
-
-		if ( ! is_object( $woocommerce ) ) {
-			return '';
-		}
-
-		$customer = $woocommerce->customer ?? null;
-
-		if ( ! is_object( $customer ) || ! is_callable( array( $customer, 'get_billing_phone' ) ) ) {
-			return '';
-		}
-
-		return (string) $customer->get_billing_phone();
 	}
 
 	private function client_check(): ClientCheck {

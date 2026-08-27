@@ -157,6 +157,48 @@ final class CheckoutHooksTest extends TestCase {
 		self::assertArrayHasKey( 'ozon_delivery_phone', $packages[0] );
 	}
 
+	/**
+	 * Телефон обязан попасть в пакет именно из формы чекаута.
+	 *
+	 * Пока он брался только из WC()->customer, в пакет всегда попадала пустая
+	 * строка: обработчик пересчёта WooCommerce телефон в покупателя не
+	 * переносит. Из-за этого метод доставки не показывался никогда — ни один
+	 * тариф до покупателя не доходил.
+	 */
+	public function test_phone_from_the_checkout_form_reaches_the_package(): void {
+		Functions\when( 'wp_unslash' )->returnArg();
+		Functions\when( 'sanitize_text_field' )->returnArg();
+
+		$_POST['post_data'] = 'billing_phone=%2B79001234567&billing_country=RU';
+
+		$packages = ( new CheckoutHooks() )->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		unset( $_POST['post_data'] );
+
+		self::assertSame( '+79001234567', $packages[0]['ozon_delivery_phone'] );
+	}
+
+	/**
+	 * Смена телефона обязана менять отпечаток пакета, иначе WooCommerce
+	 * отдаст тариф, посчитанный для прошлого покупателя.
+	 */
+	public function test_different_phones_give_different_packages(): void {
+		Functions\when( 'wp_unslash' )->returnArg();
+		Functions\when( 'sanitize_text_field' )->returnArg();
+
+		$hooks = new CheckoutHooks();
+
+		$_POST['post_data'] = 'billing_phone=%2B79000000001';
+		$first              = $hooks->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		$_POST['post_data'] = 'billing_phone=%2B79000000002';
+		$second             = $hooks->add_choice_to_packages( array( array( 'contents' => array() ) ) );
+
+		unset( $_POST['post_data'] );
+
+		self::assertNotSame( wp_json_encode( $first ), wp_json_encode( $second ) );
+	}
+
 	public function test_every_package_gets_the_choice(): void {
 		$this->session['ozon_delivery_point_id'] = 4242;
 
@@ -233,7 +275,11 @@ final class CheckoutHooksTest extends TestCase {
 
 		$this->session['ozon_delivery_notice'] = 'Пункт выдачи не подходит.';
 
-		self::assertSame( 'Пункт выдачи не подходит.', $hooks->take_notice() );
-		self::assertNull( $hooks->take_notice() );
+		self::assertSame( 'Пункт выдачи не подходит.', $hooks->current_notice() );
+		self::assertSame(
+			'Пункт выдачи не подходит.',
+			$hooks->current_notice(),
+			'Объяснение держится, пока держится причина.'
+		);
 	}
 }

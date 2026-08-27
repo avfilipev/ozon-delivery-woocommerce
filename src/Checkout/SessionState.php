@@ -45,19 +45,26 @@ final class SessionState {
 	}
 
 	/**
-	 * Забирает сообщение и очищает его: показывать одну и ту же ошибку на
-	 * каждой перезагрузке чекаута незачем.
+	 * Сообщение живёт, пока живёт причина.
+	 *
+	 * Забирать его по разу нельзя: WooCommerce кэширует тарифы по отпечатку
+	 * пакета, и пока покупатель не сменил ни точку, ни телефон, расчёт
+	 * повторно не запускается — новое сообщение взяться неоткуда. Покупатель
+	 * видел объяснение один раз, а потом оставался с пустой строкой доставки
+	 * и без подсказки, что делать.
 	 */
-	public function take_notice(): ?string {
+	public function current_notice(): ?string {
 		$message = (string) $this->get( self::NOTICE_KEY );
 
-		if ( '' === $message ) {
-			return null;
-		}
+		return '' === $message ? null : $message;
+	}
 
+	/**
+	 * Снимает сообщение. Зовёт тот, кто устранил причину: расчёт, отдавший
+	 * тариф, или смена выбора.
+	 */
+	public function forget_notice(): void {
 		$this->set( self::NOTICE_KEY, '' );
-
-		return $message;
 	}
 
 	private function get( string $key ): mixed {

@@ -21,7 +21,8 @@ final class CheckoutHooks {
 
 	public function __construct(
 		private readonly SessionState $state = new SessionState(),
-		private readonly Repository $points = new Repository()
+		private readonly Repository $points = new Repository(),
+		private readonly CustomerPhone $phone = new CustomerPhone()
 	) {
 	}
 
@@ -61,7 +62,7 @@ final class CheckoutHooks {
 	 */
 	public function add_choice_to_packages( array $packages ): array {
 		$point_id = $this->state->chosen_point_id() ?? 0;
-		$phone    = $this->customer_phone();
+		$phone    = $this->phone->resolve();
 
 		foreach ( array_keys( $packages ) as $index ) {
 			$packages[ $index ]['ozon_delivery_point_id'] = $point_id;
@@ -69,27 +70,6 @@ final class CheckoutHooks {
 		}
 
 		return $packages;
-	}
-
-	private function customer_phone(): string {
-		if ( ! function_exists( 'WC' ) ) {
-			return '';
-		}
-
-		/** @var mixed $woocommerce */
-		$woocommerce = WC();
-
-		if ( ! is_object( $woocommerce ) ) {
-			return '';
-		}
-
-		$customer = $woocommerce->customer ?? null;
-
-		if ( ! is_object( $customer ) || ! is_callable( array( $customer, 'get_billing_phone' ) ) ) {
-			return '';
-		}
-
-		return (string) $customer->get_billing_phone();
 	}
 
 	/**
@@ -119,14 +99,15 @@ final class CheckoutHooks {
 	}
 
 	/**
-	 * Сообщение плагина: показывается один раз и забывается.
+	 * Сообщение плагина. Держится, пока держится причина: снимает его расчёт,
+	 * которому удалось отдать тариф.
 	 */
-	public function take_notice(): ?string {
-		return $this->state->take_notice();
+	public function current_notice(): ?string {
+		return $this->state->current_notice();
 	}
 
 	public function render_notice(): void {
-		$notice = $this->take_notice();
+		$notice = $this->current_notice();
 
 		if ( null === $notice ) {
 			return;
