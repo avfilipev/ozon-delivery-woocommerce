@@ -64,7 +64,9 @@ wp ozon token                                   # получить и показ
 wp ozon points sync                             # синхронизация каталога ПВЗ
 wp ozon checkout <order_id>                     # предрасчёт по заказу
 wp ozon push <order_id>                         # передать заказ в Ozon
-wp ozon raw /v1/posting/info --json='…' --save-fixture=<name>
+wp ozon status <order_id>                       # обновить статус отправления
+wp ozon points status                           # состояние каталога
+wp ozon raw /v1/posting/info --body='…' --save-fixture=<name>
 ```
 
 ## Две ловушки, роняющие тесты молча

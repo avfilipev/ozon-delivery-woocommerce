@@ -246,12 +246,15 @@ final class Commands {
 	/**
 	 * Произвольный запрос к API. Главное — запись живого ответа в фикстуру.
 	 *
+	 * Тело передаётся в --body, а не в --json: последний зарезервирован самим
+	 * WP-CLI как синоним --format=json и до команды не доходит.
+	 *
 	 * ## OPTIONS
 	 *
 	 * <path>
 	 * : Путь метода, например /v1/posting/info
 	 *
-	 * [--json=<json>]
+	 * [--body=<json>]
 	 * : Тело запроса в JSON. По умолчанию пустой объект.
 	 *
 	 * [--save-fixture=<name>]
@@ -259,7 +262,7 @@ final class Commands {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp ozon raw /v1/posting/info --json='{"posting_numbers":["1"]}' --save-fixture=posting-info
+	 *     wp ozon raw /v1/posting/info --body='{"posting_numbers":["1"]}' --save-fixture=posting-info
 	 *
 	 * @param string[] $args
 	 * @param array<string, string> $assoc_args
@@ -271,10 +274,10 @@ final class Commands {
 			WP_CLI::error( 'Укажите путь метода, например /v1/posting/info' );
 		}
 
-		$payload = json_decode( (string) ( $assoc_args['json'] ?? '{}' ), true );
+		$payload = json_decode( (string) ( $assoc_args['body'] ?? '{}' ), true );
 
 		if ( ! is_array( $payload ) ) {
-			WP_CLI::error( 'Тело запроса в --json не разобрать.' );
+			WP_CLI::error( 'Тело запроса в --body не разобрать.' );
 		}
 
 		try {
