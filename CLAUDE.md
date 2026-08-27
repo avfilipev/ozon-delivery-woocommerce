@@ -9,10 +9,18 @@
 - Полная схема: `docs/ozon-delivery.swagger.json` — открывать точечно через `jq`, целиком в контекст не класть
 - Стек: PHP 8.1+, WordPress 6.4+, WooCommerce 8.2+, Composer, PSR-4
 
-Обновление спеки:
+### Спеки в репозитории сейчас нет
+
+Лежавший здесь `docs/ozon-delivery.swagger.json` оказался не спекой, а 164-байтной страницей редиректа: команда ниже писалась без `-L` и без cookie, поэтому сохраняла ответ testcookie. Файл удалён, чтобы не выглядеть источником истины.
+
+Скачать заново curl-ом **не получится**: `docs.ozon.ru` отдаёт 307 с `Set-Cookie`, а после перехода — 403 с JS-проверкой `abt-challenge`. Спеку нужно сохранить из браузера в `docs/ozon-delivery.swagger.json` (DevTools → Network → swagger.json → Save).
+
+Проверить, что скачалось именно то (должно быть ~171 КБ и 18 путей):
 ```bash
-curl -sS https://docs.ozon.ru/api/ozon-delivery/swagger.json -o docs/ozon-delivery.swagger.json
+jq '.paths | keys | length' docs/ozon-delivery.swagger.json
 ```
+
+До появления файла единственный источник истины — `docs/API.md`.
 
 ## Правила
 
