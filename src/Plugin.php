@@ -6,6 +6,7 @@ namespace Spoki\OzonDelivery;
 
 use Automattic\WooCommerce\Utilities\FeaturesUtil;
 use Spoki\OzonDelivery\Admin\OrderMetabox;
+use Spoki\OzonDelivery\Admin\ReturnsScreen;
 use Spoki\OzonDelivery\Admin\SettingsPage;
 use Spoki\OzonDelivery\Checkout\CheckoutHooks;
 use Spoki\OzonDelivery\Install\Migrations;
@@ -29,6 +30,7 @@ final class Plugin {
 		// её будет некому. Задача собирается лениво, уже в момент выполнения.
 		( new CheckoutHooks() )->register();
 		( new OrderMetabox() )->register();
+		( new ReturnsScreen() )->register();
 
 		add_action(
 			SyncPointsJob::HOOK,

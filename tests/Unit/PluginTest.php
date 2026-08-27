@@ -79,6 +79,17 @@ final class PluginTest extends TestCase {
 		$this->expectNotToPerformAssertions();
 	}
 
+	/**
+	 * Экран возвратов — то, чем магазин пользуется на приёмке.
+	 */
+	public function test_boot_registers_the_returns_screen(): void {
+		Actions\expectAdded( 'admin_menu' )->once();
+
+		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+
+		$this->expectNotToPerformAssertions();
+	}
+
 	public function test_activate_schedules_the_daily_catalogue_sync(): void {
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
