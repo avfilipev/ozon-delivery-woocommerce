@@ -25,24 +25,37 @@ final class LoggerTest extends TestCase {
 			'client_secret lowercase' => array( 'client_secret' ),
 			'access_token lowercase'  => array( 'access_token' ),
 			'cookie lowercase'        => array( 'cookie' ),
+			'set-cookie lowercase'    => array( 'set-cookie' ),
+			'authorization lowercase' => array( 'authorization' ),
+			'refresh_token lowercase' => array( 'refresh_token' ),
 			'Client_Secret mixed'     => array( 'Client_Secret' ),
 			'ACCESS_TOKEN upper'      => array( 'ACCESS_TOKEN' ),
 			'Cookie capitalised'      => array( 'Cookie' ),
+			'Set-Cookie capitalised'  => array( 'Set-Cookie' ),
+			'Authorization mixed'     => array( 'Authorization' ),
 		);
 	}
 
+	/**
+	 * Заголовок Authorization несёт access_token, Set-Cookie — значение testcookie.
+	 * Оба обязаны маскироваться: Transport логирует заголовки целиком.
+	 */
 	public function test_mask_replaces_secrets_in_nested_arrays(): void {
 		$masked = ( new Logger() )->mask(
 			array(
 				'headers' => array(
 					'Cookie'        => 'b2c=abc',
+					'Set-Cookie'    => 'b2c=abc; path=/; HttpOnly',
 					'Authorization' => 'Bearer xyz',
+					'Content-Type'  => 'application/json',
 				),
 			)
 		);
 
 		self::assertSame( '***', $masked['headers']['Cookie'] );
-		self::assertSame( 'Bearer xyz', $masked['headers']['Authorization'] );
+		self::assertSame( '***', $masked['headers']['Set-Cookie'] );
+		self::assertSame( '***', $masked['headers']['Authorization'] );
+		self::assertSame( 'application/json', $masked['headers']['Content-Type'] );
 	}
 
 	public function test_mask_leaves_unrelated_keys_untouched(): void {

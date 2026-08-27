@@ -13,9 +13,19 @@ final class Logger {
 	/**
 	 * Ключи, значения которых нельзя писать в лог в открытом виде.
 	 *
+	 * Authorization несёт access_token, Set-Cookie — значение testcookie,
+	 * поэтому заголовки маскируются наравне с самими секретами.
+	 *
 	 * @var string[]
 	 */
-	private const SECRET_KEYS = array( 'client_secret', 'access_token', 'cookie' );
+	private const SECRET_KEYS = array(
+		'client_secret',
+		'access_token',
+		'refresh_token',
+		'cookie',
+		'set-cookie',
+		'authorization',
+	);
 
 	/**
 	 * @param array<string, mixed> $context
