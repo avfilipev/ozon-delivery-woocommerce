@@ -14,11 +14,21 @@ use Spoki\OzonDelivery\Tests\TestCase;
 
 final class PluginTest extends TestCase {
 
+	/**
+	 * boot() читает ключи из .env.local. В тестах опции пусты, файла нет —
+	 * подставляется только чтение опций.
+	 */
+	private function boot(): void {
+		Functions\when( 'get_option' )->justReturn( '' );
+
+		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+	}
+
 	public function test_boot_registers_hpos_hook_and_settings_page_filter(): void {
 		Actions\expectAdded( 'before_woocommerce_init' )->once();
 		Filters\expectAdded( 'woocommerce_get_settings_pages' )->once();
 
-		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+		$this->boot();
 
 		$this->expectNotToPerformAssertions();
 	}
@@ -30,7 +40,7 @@ final class PluginTest extends TestCase {
 	public function test_boot_registers_the_catalogue_sync_job(): void {
 		Actions\expectAdded( 'ozon_delivery_sync_points' )->once();
 
-		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+		$this->boot();
 
 		$this->expectNotToPerformAssertions();
 	}
@@ -41,7 +51,7 @@ final class PluginTest extends TestCase {
 	public function test_boot_registers_the_shipping_method(): void {
 		Filters\expectAdded( 'woocommerce_shipping_methods' )->once();
 
-		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+		$this->boot();
 
 		$this->expectNotToPerformAssertions();
 	}
@@ -52,7 +62,7 @@ final class PluginTest extends TestCase {
 	public function test_boot_hooks_into_order_creation(): void {
 		Actions\expectAdded( 'woocommerce_checkout_create_order' )->once();
 
-		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+		$this->boot();
 
 		$this->expectNotToPerformAssertions();
 	}
@@ -63,7 +73,7 @@ final class PluginTest extends TestCase {
 	public function test_boot_registers_the_order_metabox(): void {
 		Actions\expectAdded( 'add_meta_boxes' )->once();
 
-		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+		$this->boot();
 
 		$this->expectNotToPerformAssertions();
 	}
@@ -74,7 +84,7 @@ final class PluginTest extends TestCase {
 	public function test_boot_registers_the_status_sync_job(): void {
 		Actions\expectAdded( 'ozon_delivery_sync_statuses' )->once();
 
-		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+		$this->boot();
 
 		$this->expectNotToPerformAssertions();
 	}
@@ -85,7 +95,7 @@ final class PluginTest extends TestCase {
 	public function test_boot_registers_the_returns_screen(): void {
 		Actions\expectAdded( 'admin_menu' )->once();
 
-		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->boot();
+		$this->boot();
 
 		$this->expectNotToPerformAssertions();
 	}

@@ -10,6 +10,7 @@ use Spoki\OzonDelivery\Admin\ReturnsScreen;
 use Spoki\OzonDelivery\Admin\SettingsPage;
 use Spoki\OzonDelivery\Checkout\CheckoutHooks;
 use Spoki\OzonDelivery\Cli\Commands;
+use Spoki\OzonDelivery\Install\EnvFile;
 use Spoki\OzonDelivery\Install\Migrations;
 use Spoki\OzonDelivery\Jobs\SyncPointsJob;
 use Spoki\OzonDelivery\Jobs\SyncStatusesJob;
@@ -24,6 +25,10 @@ final class Plugin {
 	}
 
 	public function boot(): void {
+		// Ключи из .env.local — удобство локальной разработки. Заданное в
+		// админке не перетирается, а когда ключи уже есть, файл не читается.
+		EnvFile::create()->fill_missing_options();
+
 		add_action( 'before_woocommerce_init', array( $this, 'declare_compatibility' ) );
 		add_filter( 'woocommerce_get_settings_pages', array( $this, 'register_settings_page' ) );
 
