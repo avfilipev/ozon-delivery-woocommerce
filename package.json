@@ -1,0 +1,7 @@
+{
+    "name": "ozon-delivery-for-woocommerce",
+    "private": true,
+    "devDependencies": {
+        "@wordpress/env": "^11.14.0"
+    }
+}
