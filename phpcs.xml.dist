@@ -20,6 +20,12 @@
         <exclude name="WordPress.Files.FileName"/>
         <!-- PSR-4 требует строгое соответствие "1 файл — 1 класс/интерфейс". -->
         <exclude name="Generic.Files.OneObjectStructurePerFile"/>
+        <!--
+            Сообщения исключений уходят в журнал WooCommerce, а не в браузер.
+            Экранирование делается в точке вывода (admin_notices — через esc_html),
+            иначе в логах окажутся HTML-сущности вместо читаемого текста.
+        -->
+        <exclude name="WordPress.Security.EscapeOutput.ExceptionNotEscaped"/>
     </rule>
 
     <rule ref="WordPress.WP.I18n">
