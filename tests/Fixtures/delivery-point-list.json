@@ -1,0 +1,17 @@
+{
+    "delivery_points": [
+        {
+            "delivery_point_id": 5750,
+            "shipment_method_ids": [
+                1020005028484490
+            ]
+        },
+        {
+            "delivery_point_id": 5795,
+            "shipment_method_ids": [
+                1020005028484490
+            ]
+        }
+    ],
+    "next_cursor": "5795"
+}

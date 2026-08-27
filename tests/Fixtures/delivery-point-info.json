@@ -1,0 +1,220 @@
+{
+    "delivery_points": [
+        {
+            "delivery_point_id": 5750,
+            "name": "Пункт Ozon",
+            "delivery_point_number": "57-50",
+            "type": "pvz",
+            "full_address": "Россия, Московская, Балашиха, улица Свердлова, 16/5",
+            "coordinates": {
+                "latitude": 55.821897,
+                "longitude": 37.969685
+            },
+            "schedule": [
+                {
+                    "date": "2026-08-27",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-08-28",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-08-29",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-08-30",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-08-31",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-01",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-02",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-03",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-04",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-05",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-06",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-07",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-08",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-09",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-10",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-11",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-12",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-13",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-14",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-15",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                },
+                {
+                    "date": "2026-09-16",
+                    "periods": [
+                        {
+                            "from_local": "09:00:00",
+                            "to_local": "21:00:00"
+                        }
+                    ]
+                }
+            ],
+            "is_active": true,
+            "storage_period_days": 14,
+            "fitting_rooms_count": 2,
+            "is_bulky": false,
+            "restrictions": {
+                "max_weight_g": 35000,
+                "max_width_mm": 500,
+                "max_length_mm": 500,
+                "max_height_mm": 500,
+                "max_price": {
+                    "amount": "500000.00",
+                    "currency_code": "RUB"
+                }
+            }
+        }
+    ]
+}
