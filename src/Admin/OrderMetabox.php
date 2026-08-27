@@ -7,6 +7,7 @@ namespace Spoki\OzonDelivery\Admin;
 use Spoki\OzonDelivery\Api\ClientFactory;
 use Spoki\OzonDelivery\Api\Endpoints\Postings;
 use Spoki\OzonDelivery\Api\Exception\ApiException;
+use Spoki\OzonDelivery\Order\Canceller;
 use Spoki\OzonDelivery\Order\Creator;
 use Spoki\OzonDelivery\Order\Meta;
 use Spoki\OzonDelivery\Order\PostingStatus;
@@ -30,6 +31,8 @@ final class OrderMetabox {
 
 	public const REFRESH_ACTION = 'ozon_delivery_refresh_status';
 
+	public const CANCEL_ACTION = 'ozon_delivery_cancel_posting';
+
 	private const SCREEN_LEGACY = 'shop_order';
 
 	private const SCREEN_HPOS = 'woocommerce_page_wc-orders';
@@ -40,6 +43,7 @@ final class OrderMetabox {
 		add_action( 'admin_post_' . self::APPROVE_ACTION, array( $this, 'handle_approve' ) );
 		add_action( 'admin_post_' . self::LABEL_ACTION, array( $this, 'handle_label' ) );
 		add_action( 'admin_post_' . self::REFRESH_ACTION, array( $this, 'handle_refresh' ) );
+		add_action( 'admin_post_' . self::CANCEL_ACTION, array( $this, 'handle_cancel' ) );
 	}
 
 	public function add(): void {
@@ -125,6 +129,11 @@ final class OrderMetabox {
 			$this->render_action_link( self::LABEL_ACTION, $order_id, __( 'Скачать этикетку', 'ozon-delivery-for-woocommerce' ), 'button-primary' );
 		}
 
+		// Отмена недоступна после вручения.
+		if ( $status->can_be_canceled() ) {
+			$this->render_action_link( self::CANCEL_ACTION, $order_id, __( 'Отменить отправление', 'ozon-delivery-for-woocommerce' ) );
+		}
+
 		echo '</p>';
 
 		if ( $status->needs_attention() ) {
@@ -170,6 +179,16 @@ final class OrderMetabox {
 			// Настоящий результат подтверждения смотрится через posting/info —
 			// так велит документация Ozon.
 			StatusSync::create()->sync_order( $order );
+		}
+
+		$this->back();
+	}
+
+	public function handle_cancel(): void {
+		$order = $this->authorised_order( self::CANCEL_ACTION );
+
+		if ( null !== $order ) {
+			Canceller::create()->cancel( $order );
 		}
 
 		$this->back();
