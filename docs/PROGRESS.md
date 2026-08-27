@@ -132,10 +132,64 @@ composer analyse  — уровень 6, 0 ошибок
 
 ---
 
+## Фаза 3 — метод доставки до ПВЗ: сделано (27.08.2026)
+
+| Файл | Назначение | Тест |
+|---|---|---|
+| `src/Shipping/Destination.php` | Пункт выдачи или курьер по координатам | `tests/Unit/Shipping/DestinationTest.php` |
+| `src/Api/Endpoints/Delivery.php` | `check-client`, `location` | `tests/Unit/Api/Endpoints/DeliveryTest.php` |
+| `src/Api/Endpoints/Orders.php` | `order/checkout` — стоимость, страховка, срок | `tests/Unit/Api/Endpoints/OrdersTest.php` |
+| `src/Shipping/Packer.php`, `CartItem.php` | Упаковка корзины в одно отправление | `tests/Unit/Shipping/PackerTest.php` |
+| `src/Shipping/DeclaredValue.php` | Объявленная стоимость процентом от заказа | `tests/Unit/Shipping/DeclaredValueTest.php` |
+| `src/Shipping/PackageReader.php` | Чтение корзины WooCommerce | `tests/Unit/Shipping/PackageReaderTest.php` |
+| `src/Shipping/RateCalculator.php`, `PackageSignature.php` | Расчёт тарифа с кэшем | `tests/Unit/Shipping/RateCalculatorTest.php` |
+| `src/Shipping/QuoteBuilder.php` | Единая точка расчёта из настроек | `tests/Unit/Shipping/QuoteBuilderTest.php` |
+| `src/Shipping/MethodPickup.php` | Метод доставки WooCommerce | не юнит-тестируется, проверен в wp-env |
+| `src/Checkout/ClientCheck.php` | Проверка покупателя по телефону, с кэшем | `tests/Unit/Checkout/ClientCheckTest.php` |
+| `src/Checkout/SessionState.php` | Выбранный ПВЗ и сообщения в сессии | `tests/Unit/Checkout/SessionStateTest.php` |
+| `src/Checkout/PointPicker.php` | Поиск и выбор точки, AJAX | `tests/Unit/Checkout/PointPickerTest.php` |
+| `src/Checkout/CheckoutHooks.php` | Регистрация метода, перенос ПВЗ в заказ | `tests/Unit/Checkout/CheckoutHooksTest.php` |
+| `src/Checkout/PickerField.php`, `assets/js/checkout-point-picker.js` | Поле выбора на чекауте | не юнит-тестируется, проверено в wp-env |
+| `src/Order/Meta.php` | ПВЗ, расчёт и идентификаторы Ozon в заказе | `tests/Unit/Order/MetaTest.php` |
+
+```
+composer lint     — 78/78, без замечаний
+composer test     — 459 тестов, 772 assertions, OK
+composer analyse  — уровень 6, 0 ошибок
+```
+
+### Решения, которые стоит знать
+
+- **Правило 5 соблюдено буквально.** Во всём плагине нет ни одной `wc_add_notice(..., 'error')`. Нет тарифа — метод просто не показывается, причина уходит своей строкой под таблицей доставки и в мету заказа.
+- **Кэш расчёта обязателен.** WooCommerce пересчитывает доставку на каждое изменение корзины и на каждую загрузку чекаута. Отпечаток включает всё, что влияет на цену; телефон попадает в ключ только хешем. Неудача кэшируется на 2 минуты против 15 у успеха: иначе каждое обновление корзины долбит лежащий API.
+- **`check-client` при недоступности API не прячет метод.** Знать вердикт неоткуда, а настоящей проверкой всё равно будет `order/checkout`, который при той же недоступности сам не отдаст тариф. Такой «ответ» не кэшируется.
+- **Больше 100% объявленной стоимости не пропускается** — почти всегда это опечатка (10000 вместо 100). Осознанный случай закрывается фильтром.
+- **Поиск точек идёт по локальному каталогу**, а не по API: `delivery-point/list` не умеет искать по городу и отдаёт только идентификаторы.
+
+### Живая проверка в wp-env (27.08.2026)
+
+Через подмену `pre_http_request` — приём из плана:
+
+- сквозной расчёт: токен → `order/checkout` → разбор ответа, итог 375.00 (350 доставка + 25 страховка);
+- конвертация единиц следует настройке магазина, а не захардкожена: при `lbs`/`in` товар 1.5×30 дал 680 г и 772 мм, после переключения на `kg`/`cm` — 1500 г и 310 мм (300 + 10 запаса);
+- метод доставки зарегистрирован в WooCommerce, поддерживает зоны;
+- без выбранной точки — 0 тарифов и понятное сообщение, без фатала; с точкой — тариф 350.00;
+- поиск ПВЗ по городу, выбор, отказ на исчезнувшую точку и обе AJAX-ручки работают;
+- `debug.log` пуст.
+
+### Две ловушки, найденные по дороге
+
+Обе роняют PHPUnit **молча**, с кодом возврата 0, — описаны в `CLAUDE.md`:
+
+1. `defined( 'ABSPATH' ) || exit;` в файлах классов: в юнит-тестах `ABSPATH` нет, автозагрузка завершает процесс. Из `src/` убрано, в точках входа оставлено.
+2. Обращение к константе класса, наследующего класс WooCommerce (`MethodPickup extends WC_Shipping_Method`): без WooCommerce его нельзя даже автозагрузить. Идентификаторы вынесены в `Shipping\Methods`.
+
+---
+
 ## Что дальше
 
 1. **Добавить ключи** в настройки WooCommerce (`.env.local` потерян и в git его не было) и нажать «Проверить подключение» — это первый живой прогон OAuth и testcookie. Затем «Обновить каталог» — первый настоящий обход ПВЗ.
 2. Записать живой ответ токена в `tests/Fixtures/`, закрыть открытый вопрос по схеме ответа OAuth.
 3. Сохранить спеку из браузера в `docs/ozon-delivery.swagger.json`.
-4. Фаза 3 — метод доставки до ПВЗ: расчёт через `order/checkout`, выбор точки на чекауте, `check-client`, сохранение точки в мету заказа.
+4. Фаза 4 — передача заказа: `order/create` с `Idempotency-Key`, разбор per-posting ошибок, мета с `order_number` и `posting_number`.
 
