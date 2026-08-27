@@ -34,7 +34,7 @@ composer analyse  — уровень 6, 0 ошибок (только nag о ве
 - **Что юнит-тестируется, а что нет.** Всё, что содержит принятие решений (сравнение версий, санитизация, маскирование, версия схемы, wiring хуков), покрыто тестами через Brain Monkey/Mockery. WC-специфичный «клей» — `SettingsPage` (наследует `WC_Settings_Page`, которого нет без загруженного WooCommerce) и `Plugin::register_settings_page()` — тестами не покрыт по объективной причине: класс WooCommerce нельзя ни замокать через `extends`, ни загрузить в чистом PHPUnit-окружении. Так же не тестируются `uninstall.php` и главный файл плагина — это стандартные WP-точки входа. Все они **проверены живьём в wp-env 27.08.2026** (см. раздел ниже) — активация, экран настроек, сохранение полей, маскирование секрета, удаление опций подтверждены на реальном WooCommerce 11.0.1, не только на стабах.
 - **Секрет `client_secret` не выводится в открытом виде.** Кастомный тип поля WC (`woocommerce_admin_field_ozon_secret` / `woocommerce_update_option_ozon_secret`) — поле всегда рендерится пустым с плейсхолдером-маркером «сохранено», при пустой отправке старое значение не трогается.
 - **Ruleset PHPCS сужен до WordPress-Core + WordPress-Extra**, без WordPress-Docs — с ним требуются полные докблоки на каждый метод, включая тестовые, что превращается в чистый шум. Core+Extra по-прежнему полноценный WPCS (табы, экранирование вывода, нонсы, именование и т.д.).
-- **`composer analyse` требует `--memory-limit=512M`** — со стабами WooCommerce дефолтных 128M не хватает, зашито в скрипт `analyse` в `composer.json`.
+- **`composer analyse` требует `--memory-limit=1G`** — со стабами WooCommerce дефолтных 128M не хватает, зашито в скрипт `analyse` в `composer.json`.
 
 ### Живая проверка в wp-env (27.08.2026)
 
@@ -50,10 +50,47 @@ Docker Desktop и `@wordpress/env` (пакет `wp-env` из npm-реестра 
 
 Также встретилась не связанная с плагином особенность локальной среды: `dns.resolve()` в Node ломается на этой машине из-за того, что macOS не пишет реальные записи в `/etc/resolv.conf` (сеть в целом работает, обычный `dns.lookup()`/curl — нет). Из-за этого `wp-env` считает себя офлайн и не выкачивает WordPress/WooCommerce сам — обходится вручную через `wp plugin install woocommerce --activate` внутри контейнера (у Linux-контейнера с DNS всё в порядке).
 
-### Что дальше — фаза 1 (по `docs/PLAN.md`)
+---
 
-1. **`Api\Transport`** — редиректы `testcookie` (302/307, сохранение тела POST и cookie), ретраи, 429. Согласно `docs/PLAN.md`, это самая рискованная часть, поэтому она идёт сразу за каркасом, а не в конце.
-2. **`Api\TokenStore`** — OAuth `client_credentials`, кэш токена, обновление до истечения, реакция на 401.
-3. Кнопка «Проверить подключение» и страница диагностики в админке.
+## Фаза 1 — транспорт и авторизация: сделано (27.08.2026)
 
-Секреты для ручной проверки фазы 1 (client_id/client_secret/scope/shipment_method_id) — из `.env.local`, читаются только вручную через экран настроек, не в коде плагина.
+| Файл | Назначение | Тест |
+|---|---|---|
+| `src/Api/CookieJar.php` | Хранилище cookie testcookie: разбор `Set-Cookie`, отбрасывание атрибутов, слияние, перезапись по имени, транзиент на 12 часов | `tests/Unit/Api/CookieJarTest.php` |
+| `src/Api/Transport.php` | Единственная точка выхода в сеть: редиректы 302/307 с сохранением POST и тела, cookie, ретраи с экспоненциальной паузой, 429, `Retry-After`, `x-o3-trace-id` | `tests/Unit/Api/TransportTest.php` |
+| `src/Api/TokenStore.php` | OAuth `client_credentials`, кэш токена на `expires_in` минус 60 с, `forget()` при 401 | `tests/Unit/Api/TokenStoreTest.php` |
+| `src/Api/Credentials.php` | Ключи частного приложения из настроек | `tests/Unit/Api/CredentialsTest.php` |
+| `src/Api/Client.php` | Адрес, `Authorization`, JSON, разбор ошибок HTTP, dry-run, обновление токена по 401, обязательный `Idempotency-Key` у `order/create` | `tests/Unit/Api/ClientTest.php` |
+| `src/Api/ClientFactory.php` | Сборка клиента из настроек, безопасное умолчание dry-run | `tests/Unit/Api/ClientFactoryTest.php` |
+| `src/Admin/HealthCheck.php` | Проверка подключения через `delivery-point/list` с лимитом 1 | `tests/Unit/Admin/HealthCheckTest.php` |
+| `src/Admin/SettingsPage.php` | Кнопка «Проверить подключение» (admin-post, nonce, `manage_woocommerce`) | не юнит-тестируется, проверено в wp-env |
+
+Исключения: `ApiException` (база), `TransportException`, `RateLimitException`, `AuthException`, `DryRunException`.
+
+```
+composer lint     — 39/39, без замечаний
+composer test     — 130 тестов, 196 assertions, OK
+composer analyse  — уровень 6, 0 ошибок
+```
+
+### Решения, которые стоит знать
+
+- **Контракт `Transport`.** Любой полученный HTTP-ответ возвращается как `Response`, включая 4xx и 5xx — у них в спеке описано тело `error.code`/`error.message`. Исключение бросается только когда ответа нет вовсе (сеть, зацикленный редирект) или когда 429 не ушёл за отведённые попытки.
+- **Ретраи и идемпотентность.** Отключены для `posting/approve`, `posting/label`, `posting/cancel` — там идемпотентность ничем не гарантирована. Для `order/create` включены: его защищает `Idempotency-Key`, и `Transport` шлёт тот же ключ во всех попытках. Редиректы testcookie обрабатываются всегда, даже там, где ретраи запрещены: это штатный механизм, а не сбой.
+- **Dry-run бросает `DryRunException`, а не возвращает поддельный успех.** Иначе заказ будет помечен переданным, хотя в Ozon ничего не ушло.
+- **Тела запросов и ответов не логируются никогда.** В них лежат `access_token` и персональные данные покупателя. Логируются статус, адрес, `x-o3-trace-id` и заголовки (с маскированием).
+- **Дыра в `Logger`, закрытая по пути.** Маскировались только `client_secret`, `access_token` и `cookie`; заголовки `Authorization` (несёт токен) и `Set-Cookie` уходили в журнал открытым текстом, а прежний тест это закреплял. Добавлены `authorization`, `set-cookie`, `refresh_token`.
+
+### Открытые вопросы фазы 1
+
+1. **Схема ответа точки выдачи токена не подтверждена.** `docs/API.md` описывает только параметры запроса. Разбор ответа и form-urlencoded тело сделаны по RFC 6749 (§4.4, §5.1) — по стандарту, который `docs/API.md` называет прямо. Как появится живой ответ: записать в `tests/Fixtures/` и переписать тест против фикстуры (правило 11). Помечено в докблоке `TokenStore`.
+2. **Полной спеки в репозитории нет** — см. раздел в `CLAUDE.md`. До неё единственный источник истины `docs/API.md`.
+3. **Ничего не проверено на живом API**: нет ключей. Всё выше — юнит-тесты и статический анализ.
+
+### Что дальше
+
+1. **Добавить ключи** в настройки WooCommerce (`.env.local` потерян и в git его не было) и нажать «Проверить подключение» — это первый живой прогон OAuth и testcookie.
+2. Записать живой ответ токена в `tests/Fixtures/`, закрыть открытый вопрос 1.
+3. Сохранить спеку из браузера в `docs/ozon-delivery.swagger.json`.
+4. Фаза 2 — каталог ПВЗ: синхронизация в свою таблицу, экран в админке, геовыборка.
+
