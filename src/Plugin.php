@@ -9,6 +9,7 @@ use Spoki\OzonDelivery\Admin\OrderMetabox;
 use Spoki\OzonDelivery\Admin\ReturnsScreen;
 use Spoki\OzonDelivery\Admin\SettingsPage;
 use Spoki\OzonDelivery\Checkout\CheckoutHooks;
+use Spoki\OzonDelivery\Cli\Commands;
 use Spoki\OzonDelivery\Install\Migrations;
 use Spoki\OzonDelivery\Jobs\SyncPointsJob;
 use Spoki\OzonDelivery\Jobs\SyncStatusesJob;
@@ -31,6 +32,8 @@ final class Plugin {
 		( new CheckoutHooks() )->register();
 		( new OrderMetabox() )->register();
 		( new ReturnsScreen() )->register();
+
+		Commands::register();
 
 		add_action(
 			SyncPointsJob::HOOK,

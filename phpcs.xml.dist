@@ -44,6 +44,22 @@
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
 
+    <!--
+        В юнит-тестах нет файловой системы WordPress: временные файлы
+        создаются обычными функциями PHP. В боевом коде правило действует.
+    -->
+    <rule ref="WordPress.WP.AlternativeFunctions">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+
+    <!--
+        Сигнатуру команд диктует WP-CLI: он всегда передаёт и позиционные,
+        и именованные аргументы, даже когда команда их не использует.
+    -->
+    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+        <exclude-pattern>src/Cli/*</exclude-pattern>
+    </rule>
+
     <!-- Капабилити WooCommerce: ядру WordPress они неизвестны. -->
     <rule ref="WordPress.WP.Capabilities">
         <properties>
