@@ -34,6 +34,8 @@ final class Client {
 		'/v1/posting/approve',
 		'/v1/posting/label',
 		'/v1/posting/cancel',
+		// Сброс обесценивает уже напечатанный штрихкод получения возвратов.
+		'/v1/return/reset_barcode',
 	);
 
 	/**
@@ -47,6 +49,7 @@ final class Client {
 		'/v1/posting/approve',
 		'/v1/posting/label',
 		'/v1/posting/cancel',
+		'/v1/return/reset_barcode',
 	);
 
 	private const ORDER_CREATE = '/v1/order/create';
