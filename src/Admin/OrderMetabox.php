@@ -118,7 +118,9 @@ final class OrderMetabox {
 			Creator::create()->push( $order );
 		}
 
-		wp_safe_redirect( wp_get_referer() ?: admin_url( 'admin.php?page=wc-orders' ) );
+		$referer = wp_get_referer();
+
+		wp_safe_redirect( false === $referer ? admin_url( 'admin.php?page=wc-orders' ) : $referer );
 		exit;
 	}
 
