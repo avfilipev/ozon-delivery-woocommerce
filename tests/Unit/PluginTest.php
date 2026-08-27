@@ -39,7 +39,21 @@ final class PluginTest extends TestCase {
 		$this->expectNotToPerformAssertions();
 	}
 
-	public function test_activate_stamps_db_version_via_migrations(): void {
+	public function test_activate_runs_migrations(): void {
+		$wpdb         = Mockery::mock();
+		$wpdb->prefix = 'wp_';
+		$wpdb->shouldReceive( 'get_charset_collate' )->andReturn( '' );
+		$GLOBALS['wpdb'] = $wpdb;
+
+		$applied = array();
+
+		Functions\when( 'dbDelta' )->alias(
+			static function ( string $sql ) use ( &$applied ): array {
+				$applied[] = $sql;
+				return array();
+			}
+		);
+
 		Functions\expect( 'get_option' )
 			->once()
 			->with( Migrations::OPTION_NAME, false )
@@ -51,6 +65,8 @@ final class PluginTest extends TestCase {
 
 		( new Plugin( '/plugin/ozon-delivery-for-woocommerce.php' ) )->activate();
 
-		$this->expectNotToPerformAssertions();
+		unset( $GLOBALS['wpdb'] );
+
+		self::assertCount( 1, $applied );
 	}
 }

@@ -36,6 +36,14 @@
         </properties>
     </rule>
 
+    <!--
+        Подмена $wpdb — штатный приём юнит-теста без базы. В боевом коде
+        правило продолжает действовать.
+    -->
+    <rule ref="WordPress.WP.GlobalVariablesOverride">
+        <exclude-pattern>tests/*</exclude-pattern>
+    </rule>
+
     <!-- Капабилити WooCommerce: ядру WordPress они неизвестны. -->
     <rule ref="WordPress.WP.Capabilities">
         <properties>
