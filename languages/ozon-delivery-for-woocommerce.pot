@@ -1,0 +1,314 @@
+# Copyright (C) 2026 Spoki
+# This file is distributed under the GPL v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Ozon Доставка для WooCommerce 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/ozon-delivery-woocommerce\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-08-27T18:42:56+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: ozon-delivery-for-woocommerce\n"
+
+#. Plugin Name of the plugin
+#: ozon-delivery-for-woocommerce.php
+msgid "Ozon Доставка для WooCommerce"
+msgstr ""
+
+#. Description of the plugin
+#: ozon-delivery-for-woocommerce.php
+msgid "Интеграция Ozon Delivery API в WooCommerce."
+msgstr ""
+
+#. Author of the plugin
+#: ozon-delivery-for-woocommerce.php
+msgid "Spoki"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:54
+#: src/Admin/SettingsPage.php:39
+msgid "Ozon Доставка"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:76
+msgid "Пункт выдачи Ozon в заказе не выбран."
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:81
+#: src/Shipping/MethodPickup.php:145
+msgid "Пункт выдачи"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:84
+msgid "Стоимость доставки"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:85
+msgid "Страховка"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:86
+#: src/Shipping/MethodPickup.php:146
+msgid "Срок, дней"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:87
+msgid "Заказ в Ozon"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:88
+msgid "Отправление"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:114
+msgid "Статус Ozon"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:120
+msgid "Обновить статус"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:125
+msgid "Подтвердить к отгрузке"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:129
+msgid "Скачать этикетку"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:134
+msgid "Отменить отправление"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:142
+msgid "Ozon не смог подтвердить отправление. Проверьте баланс кабинета и данные заказа."
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:175
+msgid "Отправление подтверждено к отгрузке."
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:245
+#: src/Admin/ReturnsScreen.php:136
+#: src/Admin/SettingsPage.php:119
+#: src/Admin/SettingsPage.php:174
+msgid "Недостаточно прав."
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:276
+msgid "Передать в Ozon"
+msgstr ""
+
+#: src/Admin/OrderMetabox.php:280
+msgid "Включён dry-run: заказ не уйдёт в Ozon, запрос только запишется в журнал."
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:34
+#: src/Admin/ReturnsScreen.php:35
+#: src/Admin/ReturnsScreen.php:48
+msgid "Возвраты Ozon"
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:64
+msgid "Возвратов нет."
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:73
+msgid "Показана первая страница списка. Остальные доступны через API."
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:87
+msgid "Возврат"
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:88
+msgid "Заказ"
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:89
+msgid "Статус"
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:90
+msgid "Где сейчас"
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:91
+msgid "Причина"
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:126
+msgid "Скачать штрихкод получения возвратов"
+msgstr ""
+
+#: src/Admin/ReturnsScreen.php:130
+msgid "Срок действия указан в самом файле: скачивайте штрихкод непосредственно перед получением возвратов."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:65
+#: src/Admin/SettingsPage.php:141
+msgid "Подключение"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:72
+#: src/Admin/SettingsPage.php:93
+msgid "Каталог пунктов выдачи"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:101
+msgid "Обновить каталог"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:105
+msgid "Обход идёт в фоне порциями: каталог у Ozon большой, а адреса добираются отдельными запросами. Обрыв продолжится с того же места."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:147
+msgid "Проверить подключение"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:151
+msgid "Отправляет запрос delivery-point/list с лимитом 1: ничего не создаёт, но проверяет ключи, токен и сеть целиком."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:207
+msgid "не задано"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:208
+msgid "Оставьте пустым, чтобы не менять сохранённое значение."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:231
+msgid "Client ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:233
+msgid "Client Secret"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:235
+msgid "Scope"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:237
+msgid "Shipment Method ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:239
+msgid "Dry-run: не отправлять запросы на запись"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:241
+msgid "Вес по умолчанию (единицы WooCommerce)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:243
+msgid "Длина по умолчанию (единицы WooCommerce)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:245
+msgid "Ширина по умолчанию (единицы WooCommerce)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:247
+msgid "Высота по умолчанию (единицы WooCommerce)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:249
+msgid "Запас на упаковку, мм"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:251
+msgid "Объявленная стоимость, % от суммы заказа"
+msgstr ""
+
+#: src/Checkout/PickerField.php:52
+msgid "Ищем пункты выдачи…"
+msgstr ""
+
+#: src/Checkout/PickerField.php:53
+msgid "В этом городе пунктов выдачи не нашлось."
+msgstr ""
+
+#: src/Checkout/PickerField.php:54
+msgid "Укажите город."
+msgstr ""
+
+#: src/Checkout/PickerField.php:55
+msgid "Сохраняем выбор…"
+msgstr ""
+
+#: src/Checkout/PickerField.php:56
+#: src/Checkout/PickerField.php:86
+msgid "Выбран пункт выдачи:"
+msgstr ""
+
+#: src/Checkout/PickerField.php:57
+msgid "Не удалось получить список пунктов выдачи."
+msgstr ""
+
+#: src/Checkout/PickerField.php:71
+msgid "Пункт выдачи Ozon"
+msgstr ""
+
+#: src/Checkout/PickerField.php:77
+msgid "Город"
+msgstr ""
+
+#: src/Checkout/PickerField.php:78
+msgid "Найти"
+msgstr ""
+
+#: src/Checkout/PointPicker.php:102
+msgid "Этот пункт выдачи больше недоступен."
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:36
+msgid "Ozon Доставка — пункт выдачи"
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:37
+msgid "Доставка до пункта выдачи Ozon. Стоимость и срок приходят из Ozon по составу корзины и выбранной точке."
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:54
+#: src/Shipping/MethodPickup.php:77
+msgid "Ozon: пункт выдачи"
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:70
+msgid "Включить"
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:75
+msgid "Название для покупателя"
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:79
+msgid "Как метод называется на чекауте."
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:82
+msgid "Налог"
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:86
+msgid "Облагается"
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:87
+msgid "Не облагается"
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:103
+msgid "Выберите пункт выдачи Ozon, чтобы увидеть стоимость доставки."
+msgstr ""
+
+#: src/Shipping/MethodPickup.php:113
+msgid "Доставка Ozon доступна покупателям, зарегистрированным на Ozon. Проверьте номер телефона."
+msgstr ""

@@ -27,8 +27,25 @@ defined( 'ABSPATH' ) || exit;
 require __DIR__ . '/vendor/autoload.php';
 
 register_activation_hook( __FILE__, array( new Plugin( __FILE__ ), 'activate' ) );
+register_deactivation_hook( __FILE__, array( new Plugin( __FILE__ ), 'deactivate' ) );
 
+add_action( 'init', __NAMESPACE__ . '\\load_textdomain' );
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\bootstrap' );
+
+/**
+ * Подключает переводы.
+ *
+ * Исходные строки на русском: плагин писался под российский магазин.
+ * Перевести его можно на любой язык, включая английский, — файлы кладутся
+ * в languages/.
+ */
+function load_textdomain(): void {
+	load_plugin_textdomain(
+		'ozon-delivery-for-woocommerce',
+		false,
+		dirname( plugin_basename( __FILE__ ) ) . '/languages'
+	);
+}
 
 /**
  * Проверяет версии окружения и либо загружает плагин, либо показывает
