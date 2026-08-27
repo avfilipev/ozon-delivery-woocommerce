@@ -33,7 +33,10 @@ final class PickerField {
 
 		wp_enqueue_script(
 			self::HANDLE,
-			plugins_url( 'assets/js/checkout-point-picker.js', dirname( __DIR__ ) . '/ozon-delivery-for-woocommerce.php' ),
+			// Два уровня вверх: главный файл плагина лежит в корне, а этот
+			// класс — в src/Checkout. Ошибка здесь ничем не проявится, кроме
+			// молчаливого 404 на скрипте.
+			plugins_url( 'assets/js/checkout-point-picker.js', dirname( __DIR__, 2 ) . '/ozon-delivery-for-woocommerce.php' ),
 			array(),
 			'0.1.0',
 			true
