@@ -247,6 +247,67 @@ final class CreatorTest extends TestCase {
 		self::assertNull( Meta::order_number( $order ) );
 	}
 
+	/**
+	 * Dry-run — настроенный режим, а не сбой заказа.
+	 *
+	 * Флаг ошибки в заказе метабокс показывает красной плашкой, а список
+	 * заказов — как проблему, требующую разбирательства. Заказ, который
+	 * намеренно не отправляли, так помечать нельзя: владелец магазина пошёл
+	 * бы искать поломку там, где всё работает как задумано. Причина видна из
+	 * примечания к заказу.
+	 */
+	public function test_dry_run_does_not_mark_the_order_as_failed(): void {
+		$this->options['ozon_delivery_dry_run'] = 'yes';
+
+		$order = $this->order();
+
+		Creator::create()->push( $order );
+
+		self::assertNull( Meta::error( $order ), 'Dry-run не ошибка заказа.' );
+		self::assertNotSame( array(), $this->notes, 'Но след остаться обязан.' );
+		self::assertStringContainsString( 'dry-run', mb_strtolower( implode( ' ', $this->notes ) ) );
+	}
+
+	/**
+	 * Отличать «намеренно не отправили» от «не получилось» должен сам
+	 * результат: иначе вызывающий код — WP-CLI, метабокс — вынужден угадывать
+	 * это по тексту сообщения. WP-CLI как раз и печатал на dry-run «Error» с
+	 * кодом возврата 1, хотя ничего не ломалось.
+	 */
+	public function test_dry_run_result_is_marked_as_skipped(): void {
+		$this->options['ozon_delivery_dry_run'] = 'yes';
+
+		$result = Creator::create()->push( $this->order() );
+
+		self::assertTrue( $result->skipped );
+		self::assertFalse( $result->succeeded() );
+	}
+
+	public function test_real_failure_is_not_marked_as_skipped(): void {
+		$this->queue( array_fill( 0, 4, self::response( 500, array(), '{}' ) ) );
+
+		self::assertFalse( Creator::create()->push( $this->order() )->skipped );
+	}
+
+	/**
+	 * Прошлая настоящая ошибка при этом не затирается: она про этот же заказ
+	 * и по-прежнему требует внимания.
+	 */
+	public function test_dry_run_keeps_a_previous_real_error(): void {
+		$this->queue( array_fill( 0, 4, self::response( 500, array(), '{}' ) ) );
+
+		$order = $this->order();
+		Creator::create()->push( $order );
+
+		$failed = Meta::error( $order );
+		self::assertNotNull( $failed );
+
+		$this->options['ozon_delivery_dry_run'] = 'yes';
+		Creator::create()->push( $order );
+
+		self::assertSame( $failed, Meta::error( $order ) );
+	}
+
 	public function test_api_failure_is_recorded_and_not_thrown(): void {
 		$this->queue( array_fill( 0, 4, self::response( 500, array(), '{}' ) ) );
 

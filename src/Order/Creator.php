@@ -81,7 +81,7 @@ final class Creator {
 				IdempotencyKey::for_order( $order )
 			);
 		} catch ( DryRunException $e ) {
-			return $this->fail( $order, $e->getMessage(), 'info' );
+			return $this->skipped( $order, $e->getMessage() );
 		} catch ( ApiException $e ) {
 			return $this->fail( $order, $e->getMessage() );
 		}
@@ -118,6 +118,22 @@ final class Creator {
 		 * @param CreatedOrder $created Ответ Ozon.
 		 */
 		do_action( 'ozon_delivery_order_created', $order, $created );
+	}
+
+	/**
+	 * Заказ не отправлен намеренно.
+	 *
+	 * Флаг ошибки здесь не ставится: метабокс показывает его красной плашкой,
+	 * и владелец магазина пошёл бы искать поломку там, где всё работает как
+	 * задумано. Dry-run — настроенный режим, а не сбой заказа. След остаётся
+	 * примечанием и записью в журнале.
+	 */
+	private function skipped( object $order, string $message ): CreatedOrder {
+		$order->add_order_note( sprintf( 'Ozon Доставка: %s', $message ) );
+
+		$this->logger->log( 'info', 'Заказ не передан в Ozon', array( 'reason' => $message ) );
+
+		return new CreatedOrder( '', array(), $message, true );
 	}
 
 	private function fail( object $order, string $message, string $level = 'warning' ): CreatedOrder {

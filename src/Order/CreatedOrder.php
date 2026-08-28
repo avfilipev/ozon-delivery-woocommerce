@@ -17,11 +17,13 @@ final class CreatedOrder {
 
 	/**
 	 * @param CreatedPosting[] $postings
+	 * @param bool             $skipped Запрос не отправляли намеренно (dry-run).
 	 */
 	public function __construct(
 		public readonly string $order_number,
 		public readonly array $postings = array(),
-		public readonly string $failure = ''
+		public readonly string $failure = '',
+		public readonly bool $skipped = false
 	) {
 	}
 

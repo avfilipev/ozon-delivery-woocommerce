@@ -209,6 +209,14 @@ final class Commands {
 
 		$result = Creator::create()->push( $order );
 
+		// Dry-run — настроенный режим, а не сбой: код возврата 1 здесь означал
+		// бы для вызывающего скрипта поломку там, где всё сработало как надо.
+		if ( $result->skipped ) {
+			WP_CLI::log( $result->error_message() );
+
+			return;
+		}
+
 		if ( ! $result->succeeded() ) {
 			WP_CLI::error( $result->error_message() );
 		}
