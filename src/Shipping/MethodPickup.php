@@ -138,7 +138,7 @@ final class MethodPickup extends WC_Shipping_Method {
 
 		if ( ! $quote->available ) {
 			// Причина уходит своей строкой, а не в wc_add_notice('error').
-			$state->remember_notice( $quote->message );
+			$state->remember_notice( $quote->customer_message() );
 
 			return;
 		}

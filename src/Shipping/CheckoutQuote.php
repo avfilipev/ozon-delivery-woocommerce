@@ -26,6 +26,29 @@ final class CheckoutQuote {
 	}
 
 	/**
+	 * Что показать покупателю, когда расчёта нет.
+	 *
+	 * Часть отказов относится к выбранной точке, а не к заказу: другой пункт
+	 * выдачи всё исправит. Отличать такие коды плагин умел, но покупателю не
+	 * говорил — тот читал «пункт выдачи не подходит» и не понимал, что
+	 * делать. Заблокированный кабинет или пустой баланс сменой точки не
+	 * лечатся, и гонять покупателя по списку там незачем.
+	 */
+	public function customer_message(): string {
+		if ( $this->available ) {
+			return '';
+		}
+
+		if ( ! ErrorCodes::is_point_specific( $this->error_code ) ) {
+			return $this->message;
+		}
+
+		return trim(
+			$this->message . ' ' . __( 'Выберите другой пункт выдачи.', 'ozon-delivery-for-woocommerce' )
+		);
+	}
+
+	/**
 	 * @param array<string, mixed> $result Элемент results[] из ответа Ozon.
 	 */
 	public static function from_result( array $result ): self {
