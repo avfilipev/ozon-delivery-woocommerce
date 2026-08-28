@@ -159,6 +159,58 @@ final class SyncPointsJobTest extends TestCase {
 		self::assertNull( $this->options[ CatalogSync::STATE_OPTION ]['cursor'] );
 	}
 
+	/**
+	 * Повторное нажатие «Обновить каталог» не должно обнулять прогресс.
+	 *
+	 * Обход 45 тысяч точек идёт больше часа. Сброс курсора на середине
+	 * отправляет его на второй круг и удваивает поток запросов к Ozon, а
+	 * владелец магазина всего лишь нажал кнопку ещё раз, не увидев отклика.
+	 */
+	public function test_second_start_resumes_instead_of_starting_over(): void {
+		$this->options[ CatalogSync::STATE_OPTION ] = array(
+			'cursor'     => 'cursor-9',
+			'finished'   => false,
+			'processed'  => 4200,
+			'started_at' => '2026-08-28 10:00:00',
+		);
+
+		$started = $this->job()->start_now();
+
+		self::assertFalse( $started, 'Обход уже идёт — начинать заново нечего.' );
+		self::assertSame( 'cursor-9', $this->options[ CatalogSync::STATE_OPTION ]['cursor'] );
+		self::assertSame( 4200, $this->options[ CatalogSync::STATE_OPTION ]['processed'] );
+	}
+
+	/**
+	 * Возобновление обязано поставить шаг: цепочка задач могла оборваться —
+	 * упал Action Scheduler, перезапустили сервер. Иначе «уже идёт» означало
+	 * бы «застряло навсегда», и каталог было бы не сдвинуть.
+	 */
+	public function test_resuming_schedules_a_step_so_a_dead_chain_revives(): void {
+		$this->options[ CatalogSync::STATE_OPTION ] = array(
+			'cursor'     => 'cursor-9',
+			'finished'   => false,
+			'processed'  => 4200,
+			'started_at' => '2026-08-28 10:00:00',
+		);
+
+		$this->job()->start_now();
+
+		self::assertCount( 1, $this->scheduled );
+	}
+
+	public function test_finished_sync_starts_over(): void {
+		$this->options[ CatalogSync::STATE_OPTION ] = array(
+			'cursor'     => 'cursor-9',
+			'finished'   => true,
+			'processed'  => 45363,
+			'started_at' => '2026-08-28 10:00:00',
+		);
+
+		self::assertTrue( $this->job()->start_now() );
+		self::assertNull( $this->options[ CatalogSync::STATE_OPTION ]['cursor'] );
+	}
+
 	public function test_daily_schedule_is_registered_once(): void {
 		SyncPointsJob::schedule_daily();
 
