@@ -39,6 +39,7 @@ final class CatalogStatusTest extends TestCase {
 
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
+		$wpdb->shouldReceive( 'esc_like' )->andReturnUsing( static fn( string $value ) => $value );
 		$wpdb->shouldReceive( 'prepare' )->andReturnUsing( static fn( string $sql ) => $sql );
 		$wpdb->shouldReceive( 'get_results' )->andReturn( array() );
 		$wpdb->shouldReceive( 'get_var' )->andReturnUsing(

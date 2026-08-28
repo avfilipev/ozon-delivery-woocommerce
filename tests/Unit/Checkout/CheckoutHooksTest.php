@@ -72,6 +72,7 @@ final class CheckoutHooksTest extends TestCase {
 
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
+		$wpdb->shouldReceive( 'esc_like' )->andReturnUsing( static fn( string $value ) => $value );
 		$wpdb->shouldReceive( 'prepare' )->andReturnUsing( static fn( string $sql ) => $sql );
 		$wpdb->shouldReceive( 'get_results' )->andReturnUsing( fn() => $this->rows );
 		$wpdb->shouldReceive( 'get_var' )->andReturn( 0 );

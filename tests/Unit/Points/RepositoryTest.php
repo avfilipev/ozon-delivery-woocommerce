@@ -56,6 +56,7 @@ final class RepositoryTest extends TestCase {
 
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
+		$wpdb->shouldReceive( 'esc_like' )->andReturnUsing( static fn( string $value ) => $value );
 
 		$wpdb->shouldReceive( 'prepare' )->andReturnUsing(
 			function ( string $sql, ...$args ) {
@@ -200,6 +201,36 @@ final class RepositoryTest extends TestCase {
 		( new Repository() )->search( new PointQuery() );
 
 		self::assertStringContainsString( 'is_active = 1', $this->last_query() );
+	}
+
+	/**
+	 * Поиск по городу обязан находить и точки, у которых город в адресе
+	 * вложен глубже.
+	 *
+	 * Новая Москва — «Россия, Москва, Марушкинское, Большое Покровское,
+	 * Лесная улица, 16д»: город точки здесь действительно посёлок, разбор не
+	 * ошибается. Но покупатель ищет «Москву», и по боевому каталогу таких
+	 * точек 499 в Москве и 315 в Петербурге — двенадцатая и шестая часть
+	 * города соответственно. Их не находил никто.
+	 */
+	public function test_search_by_city_also_matches_the_address(): void {
+		$this->rows = array( self::row( 1 ) );
+
+		( new Repository() )->search( new PointQuery( city: 'Москва' ) );
+
+		self::assertStringContainsString( 'full_address', $this->last_query() );
+	}
+
+	/**
+	 * Точки самого города идут первыми: иначе полсотни мест в списке займут
+	 * пригороды, отсортированные по алфавиту.
+	 */
+	public function test_exact_city_matches_come_first(): void {
+		$this->rows = array( self::row( 1 ) );
+
+		( new Repository() )->search( new PointQuery( city: 'Москва' ) );
+
+		self::assertMatchesRegularExpression( '/ORDER BY\s*\(?\s*city = /', $this->last_query() );
 	}
 
 	public function test_search_by_city_filters_by_city(): void {

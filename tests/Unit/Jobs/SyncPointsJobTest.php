@@ -58,6 +58,7 @@ final class SyncPointsJobTest extends TestCase {
 
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
+		$wpdb->shouldReceive( 'esc_like' )->andReturnUsing( static fn( string $value ) => $value );
 		$wpdb->shouldReceive( 'prepare' )->andReturnUsing( static fn( string $sql ) => $sql );
 		$wpdb->shouldReceive( 'replace' )->andReturn( 1 );
 		$wpdb->shouldReceive( 'query' )->andReturn( 0 );

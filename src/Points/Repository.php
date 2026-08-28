@@ -119,9 +119,18 @@ final class Repository {
 			$args[]  = $query->shipment_method_id;
 		}
 
+		// Точки самого города идут первыми: иначе полсотни мест в списке
+		// займут пригороды, отсортированные по алфавиту.
+		$order = 'city ASC,';
+
+		if ( null !== $query->city && '' !== $query->city ) {
+			$order  = '( city = %s ) DESC, city ASC,';
+			$args[] = $query->city;
+		}
+
 		$sql = 'SELECT * FROM ' . $this->table()
 			. ' WHERE ' . implode( ' AND ', $where )
-			. ' ORDER BY city ASC, name ASC LIMIT %d';
+			. ' ORDER BY ' . $order . ' name ASC LIMIT %d';
 
 		$args[] = max( 1, $query->limit );
 
@@ -161,13 +170,30 @@ final class Repository {
 	}
 
 	/**
+	 * Экранирует то, что LIKE считает подстановкой.
+	 */
+	private function like_escape( string $value ): string {
+		global $wpdb;
+
+		return $wpdb->esc_like( $value );
+	}
+
+	/**
 	 * @param string[]          $where
 	 * @param array<int, mixed> $args
 	 */
 	private function add_location_conditions( PointQuery $query, array &$where, array &$args ): void {
 		if ( null !== $query->city && '' !== $query->city ) {
-			$where[] = 'city = %s';
+			// Совпадения по адресу — не прихоть. Новая Москва выглядит как
+			// «Россия, Москва, Марушкинское, Большое Покровское, Лесная
+			// улица, 16д»: город точки здесь действительно посёлок, и разбор
+			// не ошибается. Но покупатель ищет «Москву», а таких точек в
+			// боевом каталоге 499 в Москве и 315 в Петербурге — их не
+			// находил никто. Совпадение ищется по целому сегменту адреса,
+			// иначе «Москва» поймает ещё и улицу Москвина.
+			$where[] = '( city = %s OR full_address LIKE %s )';
 			$args[]  = $query->city;
+			$args[]  = '%, ' . $this->like_escape( $query->city ) . ',%';
 		}
 
 		if ( $query->has_bounding_box() ) {

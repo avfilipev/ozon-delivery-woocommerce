@@ -92,6 +92,7 @@ final class CatalogSyncTest extends TestCase {
 	private function stub_wpdb(): void {
 		$wpdb         = \Mockery::mock();
 		$wpdb->prefix = 'wp_';
+		$wpdb->shouldReceive( 'esc_like' )->andReturnUsing( static fn( string $value ) => $value );
 
 		$wpdb->shouldReceive( 'prepare' )->andReturnUsing(
 			function ( string $sql, ...$args ) {
