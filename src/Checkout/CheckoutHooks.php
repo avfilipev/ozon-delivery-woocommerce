@@ -22,7 +22,8 @@ final class CheckoutHooks {
 	public function __construct(
 		private readonly SessionState $state = new SessionState(),
 		private readonly Repository $points = new Repository(),
-		private readonly CustomerPhone $phone = new CustomerPhone()
+		private readonly CustomerPhone $phone = new CustomerPhone(),
+		private readonly OrderQuote $quote = new OrderQuote()
 	) {
 	}
 
@@ -96,6 +97,10 @@ final class CheckoutHooks {
 		}
 
 		Meta::save_point( $order, $point );
+
+		// Разбивку показывает метабокс заказа. Сетевого запроса здесь обычно
+		// нет: тот же расчёт только что сделал метод доставки.
+		$this->quote->save( $order, $point_id );
 	}
 
 	/**

@@ -7,6 +7,10 @@ namespace Spoki\OzonDelivery\Tests\Unit\Checkout;
 use Brain\Monkey\Functions;
 use Mockery;
 use Spoki\OzonDelivery\Checkout\CheckoutHooks;
+use Spoki\OzonDelivery\Checkout\CustomerPhone;
+use Spoki\OzonDelivery\Checkout\OrderQuote;
+use Spoki\OzonDelivery\Checkout\SessionState;
+use Spoki\OzonDelivery\Points\Repository;
 use Spoki\OzonDelivery\Order\Meta;
 use Spoki\OzonDelivery\Shipping\Methods;
 use Spoki\OzonDelivery\Tests\TestCase;
@@ -215,6 +219,39 @@ final class CheckoutHooksTest extends TestCase {
 
 		self::assertArrayHasKey( 'ozon_delivery_point_id', $packages[0] );
 		self::assertSame( 0, $packages[0]['ozon_delivery_point_id'] );
+	}
+
+	/**
+	 * Разбивка расчёта обязана записываться при создании заказа.
+	 *
+	 * `Meta::save_quote()` был написан и покрыт тестами, но не вызывался
+	 * ниоткуда — метабокс показывал три пустые строки вместо стоимости
+	 * доставки, страховки и срока. Тест следит именно за связкой: код,
+	 * который никто не зовёт, тестами не ловится.
+	 */
+	public function test_quote_is_recorded_when_the_order_is_created(): void {
+		$this->rows                              = array( self::row( 4242 ) );
+		$this->session['ozon_delivery_point_id'] = 4242;
+
+		$order = $this->order();
+
+		$quote = Mockery::mock( OrderQuote::class );
+		$quote->shouldReceive( 'save' )->once()->with( $order, 4242 );
+
+		( new CheckoutHooks( new SessionState(), new Repository(), new CustomerPhone(), $quote ) )
+			->save_point_to_order( $order );
+
+		self::assertSame( 4242, Meta::point_id( $order ) );
+	}
+
+	public function test_quote_is_not_recorded_without_a_point(): void {
+		$quote = Mockery::mock( OrderQuote::class );
+		$quote->shouldNotReceive( 'save' );
+
+		( new CheckoutHooks( new SessionState(), new Repository(), new CustomerPhone(), $quote ) )
+			->save_point_to_order( $this->order() );
+
+		self::assertSame( array(), $this->meta );
 	}
 
 	public function test_chosen_point_is_saved_to_the_order(): void {
