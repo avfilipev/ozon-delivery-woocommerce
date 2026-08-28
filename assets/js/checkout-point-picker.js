@@ -42,7 +42,7 @@
 		}
 	}
 
-	function renderList( points ) {
+	function renderList( points, message ) {
 		var list = element( 'ozon-delivery-points' );
 
 		if ( ! list ) {
@@ -52,7 +52,9 @@
 		list.innerHTML = '';
 
 		if ( ! points.length ) {
-			say( settings.i18n.nothingFound );
+			// Пусто из-за габаритов и пусто из-за незнакомого города — разные
+			// беды: во втором случае покупателю есть что исправить в поле.
+			say( message || settings.i18n.nothingFound );
 			return;
 		}
 
@@ -110,7 +112,10 @@
 
 		post( settings.searchAction, settings.searchNonce, { city: input.value.trim() } )
 			.then( function ( result ) {
-				renderList( result.success ? result.data.points : [] );
+				renderList(
+					result.success ? result.data.points : [],
+					result.success ? result.data.message : ''
+				);
 			} )
 			.catch( function () {
 				say( settings.i18n.failed );

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Spoki\OzonDelivery\Checkout;
 
+use Spoki\OzonDelivery\Admin\Settings;
 use Spoki\OzonDelivery\Points\DeliveryPoint;
 use Spoki\OzonDelivery\Points\PointQuery;
 use Spoki\OzonDelivery\Points\Repository;
+use Spoki\OzonDelivery\Shipping\QuoteBuilder;
 
 /**
  * Выбор пункта выдачи на чекауте.
@@ -25,7 +27,8 @@ final class PointPicker {
 
 	public function __construct(
 		private readonly Repository $points = new Repository(),
-		private readonly SessionState $state = new SessionState()
+		private readonly SessionState $state = new SessionState(),
+		private readonly CartPackage $package = new CartPackage()
 	) {
 	}
 
@@ -46,11 +49,74 @@ final class PointPicker {
 			return array();
 		}
 
-		$points = $this->points->search( new PointQuery( city: $city, limit: self::MAX_RESULTS ) );
+		$points = $this->points->search( $this->query( $city ) );
 
 		return array_map(
 			static fn( DeliveryPoint $point ): array => self::present( $point ),
 			array_slice( $points, 0, self::MAX_RESULTS )
+		);
+	}
+
+	/**
+	 * Почему список пуст, если дело не в городе.
+	 *
+	 * Отсев по методу отгрузки и габаритам делает пустой список гораздо более
+	 * вероятным. Без объяснения покупатель с крупной посылкой видит «в этом
+	 * городе пунктов не нашлось» и идёт искать опечатку в названии города,
+	 * хотя город тут ни при чём.
+	 *
+	 * @return string Пустая строка — обычный случай «в городе ничего нет».
+	 */
+	public function explain_empty( string $city ): string {
+		$city = trim( $city );
+
+		if ( '' === $city ) {
+			return '';
+		}
+
+		$without_filters = $this->points->search( new PointQuery( city: $city, limit: 1 ) );
+
+		if ( array() === $without_filters ) {
+			return '';
+		}
+
+		return __(
+			'В этом городе есть пункты выдачи, но ни один не принимает такую посылку. Попробуйте разделить заказ.',
+			'ozon-delivery-for-woocommerce'
+		);
+	}
+
+	/**
+	 * Условия выборки: город плюс всё, чем точку можно отсечь заранее.
+	 *
+	 * Каталог умеет отбрасывать неподходящие точки прямо в SQL, но поиск
+	 * этим не пользовался — покупателю показывались точки, которые не
+	 * поддерживают наш метод отгрузки или не примут эту посылку. Выбрав
+	 * такую, он получал пустую строку доставки и невнятное объяснение.
+	 *
+	 * Габариты и стоимость берутся из корзины, если она есть: в поиске из
+	 * админки или WP-CLI её нет, и тогда отсев идёт только по методу.
+	 */
+	private function query( string $city ): PointQuery {
+		$method_id = (int) get_option( Settings::FIELD_SHIPMENT_METHOD_ID, '0' );
+		$package   = $this->package->first();
+
+		if ( null === $package ) {
+			return new PointQuery(
+				city: $city,
+				shipment_method_id: $method_id > 0 ? $method_id : null,
+				limit: self::MAX_RESULTS
+			);
+		}
+
+		$builder = QuoteBuilder::create();
+
+		return new PointQuery(
+			city: $city,
+			parcel: $builder->parcel( $package ),
+			declared_value: $builder->declared_value( $package ),
+			shipment_method_id: $method_id > 0 ? $method_id : null,
+			limit: self::MAX_RESULTS
 		);
 	}
 
@@ -89,7 +155,14 @@ final class PointPicker {
 
 		$city = isset( $_POST['city'] ) ? sanitize_text_field( wp_unslash( $_POST['city'] ) ) : '';
 
-		wp_send_json_success( array( 'points' => $this->search( (string) $city ) ) );
+		$points = $this->search( (string) $city );
+
+		wp_send_json_success(
+			array(
+				'points'  => $points,
+				'message' => array() === $points ? $this->explain_empty( (string) $city ) : '',
+			)
+		);
 	}
 
 	public function handle_ozon_delivery_choose_point(): void {

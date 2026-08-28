@@ -6,6 +6,7 @@ namespace Spoki\OzonDelivery\Tests\Unit\Checkout;
 
 use Brain\Monkey\Functions;
 use Mockery;
+use Spoki\OzonDelivery\Admin\Settings;
 use Spoki\OzonDelivery\Checkout\PointPicker;
 use Spoki\OzonDelivery\Tests\TestCase;
 
@@ -21,16 +22,58 @@ final class PointPickerTest extends TestCase {
 	 */
 	private array $session = array();
 
+	private string $sql = '';
+
+	/**
+	 * Строки, которые каталог отдаёт на выборку по одному городу, без отсева.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private array $city_rows = array();
+
+	/**
+	 * @var array<int, mixed>
+	 */
+	private array $args = array();
+
 	protected function setUp(): void {
 		parent::setUp();
 
-		$this->rows    = array();
-		$this->session = array();
+		$this->rows      = array();
+		$this->session   = array();
+		$this->sql       = '';
+		$this->args      = array();
+		$this->city_rows = array();
+
+		Functions\when( 'get_option' )->alias(
+			static function ( string $name, $default_value = '' ) {
+				if ( Settings::FIELD_SHIPMENT_METHOD_ID === $name ) {
+					return '777';
+				}
+
+				return $default_value;
+			}
+		);
 
 		$wpdb         = Mockery::mock();
 		$wpdb->prefix = 'wp_';
-		$wpdb->shouldReceive( 'prepare' )->andReturnUsing( static fn( string $sql ) => $sql );
-		$wpdb->shouldReceive( 'get_results' )->andReturnUsing( fn() => $this->rows );
+		$wpdb->shouldReceive( 'prepare' )->andReturnUsing(
+			function ( string $sql, ...$args ) {
+				$this->sql  = $sql;
+				$this->args = $args;
+
+				return $sql;
+			}
+		);
+		// Отсев по методу отгрузки и габаритам виден в SQL: так заглушка
+		// отличает суженную выборку от выборки по одному городу.
+		$wpdb->shouldReceive( 'get_results' )->andReturnUsing(
+			function () {
+				$filtered = str_contains( $this->sql, 'FIND_IN_SET' ) || str_contains( $this->sql, 'max_weight' );
+
+				return $filtered ? $this->rows : ( array() === $this->city_rows ? $this->rows : $this->city_rows );
+			}
+		);
 		$wpdb->shouldReceive( 'get_var' )->andReturn( 0 );
 		$GLOBALS['wpdb'] = $wpdb;
 
@@ -49,6 +92,7 @@ final class PointPickerTest extends TestCase {
 
 		Functions\when( 'WC' )->justReturn( $woocommerce );
 		Functions\when( 'sanitize_text_field' )->returnArg( 1 );
+		Functions\when( '__' )->returnArg( 1 );
 		Functions\when( 'wp_unslash' )->returnArg( 1 );
 	}
 
@@ -97,6 +141,41 @@ final class PointPickerTest extends TestCase {
 		self::assertSame( 55.75, $found[0]['latitude'] );
 		self::assertSame( 37.61, $found[0]['longitude'] );
 		self::assertSame( 5, $found[0]['storage_period_days'] );
+	}
+
+	/**
+	 * Точка, не поддерживающая наш метод отгрузки, покупателю бесполезна:
+	 * выбрав её, он получит пустую строку доставки и невнятное объяснение.
+	 * Каталог умеет отсекать такие прямо в SQL — поиск обязан этим
+	 * пользоваться, иначе умение лежит мёртвым грузом.
+	 */
+	public function test_search_filters_by_the_shipment_method(): void {
+		$this->rows = array( self::row( 1 ) );
+
+		( new PointPicker() )->search( 'Москва' );
+
+		self::assertStringContainsString( 'FIND_IN_SET', $this->sql );
+		self::assertContains( 777, $this->args );
+	}
+
+	/**
+	 * Пустой список из-за отсева и пустой из-за незнакомого города — разные
+	 * сообщения. Иначе покупатель с крупной посылкой видит «в этом городе
+	 * пунктов не нашлось» и идёт искать ошибку в написании города, хотя
+	 * дело в габаритах.
+	 */
+	public function test_filtered_out_points_are_explained_separately(): void {
+		$this->rows      = array();
+		$this->city_rows = array( self::row( 1 ) );
+
+		self::assertNotSame( '', ( new PointPicker() )->explain_empty( 'Москва' ) );
+	}
+
+	public function test_unknown_city_keeps_the_usual_explanation(): void {
+		$this->rows      = array();
+		$this->city_rows = array();
+
+		self::assertSame( '', ( new PointPicker() )->explain_empty( 'Мосвка' ) );
 	}
 
 	public function test_empty_query_returns_nothing(): void {

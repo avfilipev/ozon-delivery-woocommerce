@@ -23,11 +23,14 @@ use Spoki\OzonDelivery\Shipping\QuoteBuilder;
  */
 class OrderQuote {
 
-	public function __construct( private readonly CustomerPhone $phone = new CustomerPhone() ) {
+	public function __construct(
+		private readonly CustomerPhone $phone = new CustomerPhone(),
+		private readonly CartPackage $package = new CartPackage()
+	) {
 	}
 
 	public function save( object $order, int $point_id ): void {
-		$package = $this->first_package();
+		$package = $this->package->first();
 
 		if ( null === $package ) {
 			return;
@@ -37,39 +40,5 @@ class OrderQuote {
 			$order,
 			QuoteBuilder::create()->quote( $package, $this->phone->resolve(), Destination::point( $point_id ) )
 		);
-	}
-
-	/**
-	 * В версии 1 отправление на заказ одно, поэтому и пакет берётся первый.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function first_package(): ?array {
-		if ( ! function_exists( 'WC' ) ) {
-			return null;
-		}
-
-		/** @var mixed $woocommerce */
-		$woocommerce = WC();
-
-		if ( ! is_object( $woocommerce ) ) {
-			return null;
-		}
-
-		$cart = $woocommerce->cart ?? null;
-
-		if ( ! is_object( $cart ) || ! is_callable( array( $cart, 'get_shipping_packages' ) ) ) {
-			return null;
-		}
-
-		$packages = $cart->get_shipping_packages();
-
-		if ( ! is_array( $packages ) || array() === $packages ) {
-			return null;
-		}
-
-		$first = reset( $packages );
-
-		return is_array( $first ) ? $first : null;
 	}
 }
